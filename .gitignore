@@ -6,3 +6,12 @@
 !.bgsd/ledger.md
 !.bgsd/config.json
 .bgsd-tmp/
+
+# env files (open-source: never commit)
+.env
+.env.local
+.env.*.local
+
+# deps/build
+node_modules/
+.next/
