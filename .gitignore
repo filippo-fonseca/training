@@ -15,3 +15,10 @@
 # deps/build
 node_modules/
 .next/
+next-env.d.ts
+*.tsbuildinfo
+
+# local verification artifacts
+.playwright-mcp/
+/design-full.png
+/home.png
