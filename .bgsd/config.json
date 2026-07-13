@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "integration_branch": "next",
+  "base_branch": null,
+  "git": {
+    "sync_integration_from_base": true,
+    "integration_to_main": "manual"
+  },
+  "env": {
+    "propagate": true,
+    "files": [
+      ".env",
+      ".env.local",
+      ".env.*.local"
+    ]
+  },
+  "github": {
+    "issues": true,
+    "require_remote": true
+  },
+  "model_contract": {
+    "profile": "claude",
+    "routing": "fixed",
+    "build": {
+      "provider": "claude",
+      "model": "claude-opus-4-8",
+      "effort": "high"
+    },
+    "evaluate": {
+      "provider": "claude",
+      "model": "claude-opus-4-8",
+      "effort": "high"
+    },
+    "adaptive": {
+      "heavy": {
+        "model": "claude-opus-4-8",
+        "effort": "high"
+      },
+      "light": {
+        "model": "sonnet",
+        "effort": "high"
+      }
+    },
+    "transport": "direct",
+    "auth": "subscription-only"
+  },
+  "verification": {
+    "usage_testing": true,
+    "headless": false
+  },
+  "gui": {
+    "auto": true
+  },
+  "notifications": {
+    "os": true
+  },
+  "remote": {
+    "enabled": false,
+    "host": "loopback",
+    "port": 0
+  },
+  "modes": {
+    "pipeline": "adaptive",
+    "verifier": "adaptive"
+  },
+  "conductor": {
+    "name": "Kiwi",
+    "emoji": "💪",
+    "persona": "kiwi",
+    "narrate": true,
+    "suggest_gate_commands": true,
+    "advisor": "auto",
+    "self_compact_at": 0.9
+  },
+  "context": {
+    "max_window_tokens": 1000000,
+    "compact_at": 0.7,
+    "relaunch_at": 0.9
+  }
+}
