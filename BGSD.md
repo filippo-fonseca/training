@@ -109,7 +109,7 @@ Notes section and Kiwi will respect them.
   },
   "model_contract": {
     "profile": "claude",
-    "routing": "fixed",
+    "routing": "adaptive",
     "build": {
       "provider": "claude",
       "model": "claude-opus-4-8",
@@ -170,6 +170,8 @@ Notes section and Kiwi will respect them.
 ```
 
 ## Notes
+
+- This repo is open source: never commit secrets or personal tokens; env vars only, .env.example with placeholders, RLS so the anon key is safe.
 
 <!-- Free-form preferences for Kiwi. Examples:
 - Never use haiku for verification.
