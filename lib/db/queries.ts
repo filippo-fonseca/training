@@ -326,13 +326,14 @@ export async function getHealthEntriesForDay(
   return data;
 }
 
+/** Insert or update the entry for a day (owner only; unique on plan_day_id). */
 export async function upsertHealthEntry(
   client: TypedSupabaseClient,
   entry: HealthEntryInsert,
 ): Promise<HealthEntry> {
   const { data, error } = await client
     .from('health_entries')
-    .upsert(entry)
+    .upsert(entry, { onConflict: 'plan_day_id' })
     .select('*')
     .single();
   if (error) throw new DbError('upsertHealthEntry', error);
