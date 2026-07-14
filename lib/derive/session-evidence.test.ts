@@ -13,7 +13,7 @@ import {
   toActivityEvidence,
   type ActivityEvidence,
 } from './session-evidence';
-import type { SessionActivityLink, StravaActivity } from '@/lib/types/database';
+import type { SessionActivityLink } from '@/lib/types/database';
 
 function evidence(partial: Partial<ActivityEvidence>): ActivityEvidence {
   return {
