@@ -15,7 +15,11 @@
  *      raw API payload.
  */
 
-import type { SessionLog, StravaActivity } from '@/lib/types/database';
+import type {
+  SessionActivityLink,
+  SessionLog,
+  StravaActivity,
+} from '@/lib/types/database';
 
 /** Base URL for a public Strava activity page. */
 const STRAVA_ACTIVITY_BASE = 'https://www.strava.com/activities';
@@ -156,4 +160,71 @@ export function effectiveActual(
 
 function round1(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+// -----------------------------------------------------------------------------
+// Grouping helpers — fold links + activities into evidence keyed by session or
+// by plan day, so each surface builds its evidence map through one code path.
+// Pure: callers supply already-fetched rows. Ordered by activity start_date
+// (earliest first) so a track day's activities read chronologically.
+// -----------------------------------------------------------------------------
+
+/** Index activity rows by their row id, projected to public-safe evidence. */
+export function evidenceById(activities: StravaActivity[]): Map<string, ActivityEvidence> {
+  const map = new Map<string, ActivityEvidence>();
+  for (const a of activities) map.set(a.id, toActivityEvidence(a));
+  return map;
+}
+
+function sortByStart(a: ActivityEvidence, b: ActivityEvidence): number {
+  if (a.startDate == null) return 1;
+  if (b.startDate == null) return -1;
+  return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0;
+}
+
+/** Group linked evidence by day_session_id. */
+export function groupEvidenceBySession(
+  links: SessionActivityLink[],
+  activitiesById: Map<string, ActivityEvidence>,
+): Map<string, ActivityEvidence[]> {
+  const bySession = new Map<string, ActivityEvidence[]>();
+  for (const link of links) {
+    const ev = activitiesById.get(link.strava_activity_id);
+    if (!ev) continue;
+    const list = bySession.get(link.day_session_id) ?? [];
+    list.push(ev);
+    bySession.set(link.day_session_id, list);
+  }
+  for (const list of bySession.values()) list.sort(sortByStart);
+  return bySession;
+}
+
+/**
+ * Group linked evidence by plan_day_id, aggregating across every session of the
+ * day. `sessionDay` maps a day_session_id to its plan_day_id. An activity linked
+ * to more than one session of the same day (unusual) is de-duplicated by
+ * strava id so cumulative totals never double-count.
+ */
+export function groupEvidenceByDay(
+  links: SessionActivityLink[],
+  activitiesById: Map<string, ActivityEvidence>,
+  sessionDay: Map<string, string>,
+): Map<string, ActivityEvidence[]> {
+  const seen = new Map<string, Set<number>>();
+  const byDay = new Map<string, ActivityEvidence[]>();
+  for (const link of links) {
+    const planDayId = sessionDay.get(link.day_session_id);
+    if (!planDayId) continue;
+    const ev = activitiesById.get(link.strava_activity_id);
+    if (!ev) continue;
+    const seenIds = seen.get(planDayId) ?? new Set<number>();
+    if (seenIds.has(ev.stravaId)) continue;
+    seenIds.add(ev.stravaId);
+    seen.set(planDayId, seenIds);
+    const list = byDay.get(planDayId) ?? [];
+    list.push(ev);
+    byDay.set(planDayId, list);
+  }
+  for (const list of byDay.values()) list.sort(sortByStart);
+  return byDay;
 }
