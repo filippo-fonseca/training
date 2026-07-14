@@ -237,7 +237,7 @@ export function computeView(bundle: JourneyBundle, todayISO: string): JourneyVie
   const todayActual = effectiveActual(todayEvidence, todayLog);
 
   // Weekly km snapshot: planned ceiling vs the effective actuals so far (linked
-  // Strava evidence per day wins; the manual log is the fallback — lib/derive).
+  // Strava evidence per day wins; the manual log is the fallback, per lib/derive).
   let loggedKm = 0;
   let plannedToDateKm = 0;
   let hasLogs = false;

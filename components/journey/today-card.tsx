@@ -174,7 +174,7 @@ export function TodayCard({ view }: { view: JourneyView }) {
         </div>
       ) : null}
 
-      {/* Actual vs plan — once linked Strava evidence or a manual log exists.
+      {/* Actual vs plan: once linked Strava evidence or a manual log exists.
           Evidence precedence: distance/duration are cumulative Strava totals. */}
       {hasActual ? (
         <div className="flex flex-col gap-3 rounded-sd-tile border border-sd-line bg-sd-dark-box p-4">

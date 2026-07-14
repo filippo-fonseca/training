@@ -67,7 +67,7 @@ export async function listActivities(
 }
 
 /**
- * GET /activities/{id} — the detail activity, which includes `photos.primary`.
+ * GET /activities/{id}: the detail activity, which includes `photos.primary`.
  * Used ONLY when linking an activity to a session (so we spend a detail request
  * per linked activity, not per synced activity) to respect Strava's rate limits.
  * See docs/strava.md. Returns null on 404 (deleted/private activity).

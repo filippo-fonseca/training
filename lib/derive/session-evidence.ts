@@ -1,5 +1,5 @@
 /**
- * Session-evidence derivation — the single source of truth for turning linked
+ * Session-evidence derivation: the single source of truth for turning linked
  * Strava activities into a session's completion status and cumulative actuals.
  * Pure functions over plain data so every surface (day page, calendar, progress,
  * public APIs) derives identically and the logic is unit-testable in isolation.
@@ -11,7 +11,7 @@
  *   3. Linked evidence takes precedence over a manual session_log; the log is
  *      the fallback used only when no activities are linked.
  *   4. Publicly, only curated activity fields (title, photo, distance, time,
- *      strava id) are exposed — see ActivityEvidence, which never carries the
+ *      strava id) are exposed; see ActivityEvidence, which never carries the
  *      raw API payload.
  */
 
@@ -163,7 +163,7 @@ function round1(n: number): number {
 }
 
 // -----------------------------------------------------------------------------
-// Grouping helpers — fold links + activities into evidence keyed by session or
+// Grouping helpers: fold links + activities into evidence keyed by session or
 // by plan day, so each surface builds its evidence map through one code path.
 // Pure: callers supply already-fetched rows. Ordered by activity start_date
 // (earliest first) so a track day's activities read chronologically.

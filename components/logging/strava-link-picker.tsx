@@ -1,5 +1,5 @@
 /**
- * Strava evidence picker — multi-select checkbox list of synced activities for
+ * Strava evidence picker: multi-select checkbox list of synced activities for
  * one plan session, date-proximate first. Rendered (server-side) inside an
  * EntityForm bound to saveActivityLinks; every checked activity becomes a
  * session_activity_links row, unchecked ones are unlinked. Owner surface only.
