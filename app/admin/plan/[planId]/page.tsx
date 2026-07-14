@@ -7,6 +7,8 @@ import { EntityForm } from '@/components/admin/entity-form';
 import { DeleteButton } from '@/components/admin/delete-button';
 import { ChevronRightGlyph } from '@/components/admin/icons';
 import { getPlanOrNull, getPlanCounts } from '@/app/admin/_lib/queries';
+import { getPlanPrivateNotes } from '@/lib/db';
+import { createServerSupabaseClient } from '@/lib/auth/server';
 import { updatePlan, deletePlan } from '@/app/admin/plan/actions';
 
 const SECTIONS = [
@@ -19,7 +21,13 @@ const SECTIONS = [
 
 export default async function PlanDetailPage({ params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
-  const [plan, counts] = await Promise.all([getPlanOrNull(planId), getPlanCounts(planId)]);
+  const supabase = await createServerSupabaseClient();
+  const [plan, counts, privateNotes] = await Promise.all([
+    getPlanOrNull(planId),
+    getPlanCounts(planId),
+    // Owner-only clinical narrative, now in plan_private_notes (decision D1).
+    getPlanPrivateNotes(supabase, planId),
+  ]);
   if (!plan) notFound();
 
   return (
@@ -86,7 +94,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ pla
               </Field>
             </div>
             <Field label="Athlete notes" htmlFor="athlete_notes" className="mt-4">
-              <Textarea id="athlete_notes" name="athlete_notes" defaultValue={plan.athlete_notes ?? ''} />
+              <Textarea id="athlete_notes" name="athlete_notes" defaultValue={privateNotes?.athlete_notes ?? ''} />
             </Field>
           </Fieldset>
 
@@ -132,7 +140,7 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ pla
               <Textarea id="plan_logic" name="plan_logic" defaultValue={plan.plan_logic ?? ''} />
             </Field>
             <Field label="Medical notes" htmlFor="medical_notes" className="mt-4">
-              <Textarea id="medical_notes" name="medical_notes" defaultValue={plan.medical_notes ?? ''} />
+              <Textarea id="medical_notes" name="medical_notes" defaultValue={privateNotes?.medical_notes ?? ''} />
             </Field>
           </Fieldset>
 
