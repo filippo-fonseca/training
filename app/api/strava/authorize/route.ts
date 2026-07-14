@@ -5,11 +5,14 @@
 import { randomBytes } from 'node:crypto';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionUser, isOwnerEmail } from '@/lib/auth/owner';
-import { buildAuthorizeUrl, getStravaConfig, resolveRedirectUri } from '@/lib/strava';
+import {
+  buildAuthorizeUrl,
+  getStravaConfig,
+  resolveRedirectUri,
+  STRAVA_STATE_COOKIE,
+} from '@/lib/strava';
 
 export const dynamic = 'force-dynamic';
-
-export const STRAVA_STATE_COOKIE = 'strava_oauth_state';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const user = await getSessionUser();

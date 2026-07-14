@@ -14,6 +14,8 @@
 //                            because it has no owner session (see lib/strava/service.ts)
 
 export const STRAVA_SCOPE = 'read,activity:read_all';
+/** Short-lived CSRF cookie set by /api/strava/authorize, checked by the callback. */
+export const STRAVA_STATE_COOKIE = 'strava_oauth_state';
 export const STRAVA_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize';
 export const STRAVA_TOKEN_URL = 'https://www.strava.com/oauth/token';
 export const STRAVA_API_BASE = 'https://www.strava.com/api/v3';

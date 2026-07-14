@@ -6,8 +6,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getSessionUser, isOwnerEmail } from '@/lib/auth/owner';
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { exchangeCode, getStravaConfig, saveConnection } from '@/lib/strava';
-import { STRAVA_STATE_COOKIE } from '../authorize/route';
+import { exchangeCode, getStravaConfig, saveConnection, STRAVA_STATE_COOKIE } from '@/lib/strava';
 
 export const dynamic = 'force-dynamic';
 
