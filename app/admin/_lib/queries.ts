@@ -4,7 +4,8 @@
 // safe "is the database reachable / seeded" probe used for graceful states.
 
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import type { Plan } from '@/lib/types/database';
+import { getWeeks, getDays, getSessionsForDay, getAlternativesForDay } from '@/lib/db';
+import type { Plan, PlanWeek, PlanDay, DaySession, DayAlternative } from '@/lib/types/database';
 
 export interface PlanSummary {
   id: string;
@@ -77,4 +78,68 @@ export async function getPlanCounts(planId: string): Promise<PlanCounts> {
     counts[key] = results[i].count ?? 0;
   });
   return counts;
+}
+
+// -----------------------------------------------------------------------------
+// Days list + day editor bundles (owner context)
+// -----------------------------------------------------------------------------
+export interface PrimarySummary {
+  title: string;
+  distance_km: number | null;
+}
+
+export interface DaysOverview {
+  weeks: PlanWeek[];
+  days: PlanDay[];
+  /** plan_day_id -> its primary session summary, when present. */
+  primaryByDay: Map<string, PrimarySummary>;
+}
+
+/** Weeks + days + each day's primary session, for the days list grouped by week. */
+export async function getDaysOverview(planId: string): Promise<DaysOverview> {
+  const supabase = await createServerSupabaseClient();
+  const [weeks, days] = await Promise.all([getWeeks(supabase, planId), getDays(supabase, planId)]);
+
+  const primaryByDay = new Map<string, PrimarySummary>();
+  if (days.length > 0) {
+    const { data } = await supabase
+      .from('day_sessions')
+      .select('plan_day_id, title, distance_km')
+      .eq('slot', 'primary')
+      .in(
+        'plan_day_id',
+        days.map((d) => d.id),
+      );
+    for (const s of data ?? []) {
+      primaryByDay.set(s.plan_day_id, { title: s.title, distance_km: s.distance_km });
+    }
+  }
+  return { weeks, days, primaryByDay };
+}
+
+export interface DayEditorData {
+  day: PlanDay;
+  sessions: DaySession[];
+  alternatives: DayAlternative[];
+  weeks: PlanWeek[];
+}
+
+/** Everything the day editor needs, or null when the day does not exist. */
+export async function getDayEditorData(planId: string, dayId: string): Promise<DayEditorData | null> {
+  const supabase = await createServerSupabaseClient();
+  const { data: day, error } = await supabase
+    .from('plan_days')
+    .select('*')
+    .eq('id', dayId)
+    .eq('plan_id', planId)
+    .maybeSingle();
+  if (error) throw new Error(`getDayEditorData(${dayId}): ${error.message}`);
+  if (!day) return null;
+
+  const [sessions, alternatives, weeks] = await Promise.all([
+    getSessionsForDay(supabase, day.id),
+    getAlternativesForDay(supabase, day.id),
+    getWeeks(supabase, planId),
+  ]);
+  return { day, sessions, alternatives, weeks };
 }
