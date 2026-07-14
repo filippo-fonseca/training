@@ -47,7 +47,7 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
           <ProgressBar
             value={pct}
             label="Logged vs planned"
-            valueLabel={`${kmValue(loggedKm) || '0'} / ${kmValue(plannedKm) || '—'} km`}
+            valueLabel={`${kmValue(loggedKm) || '0'} / ${kmValue(plannedKm) || '--'} km`}
           />
         </div>
       </Panel>
@@ -175,7 +175,7 @@ function WeekDayRow({
       {/* Right: km + status */}
       <div className="flex shrink-0 flex-col items-end justify-center gap-1">
         <span className="sd-numeral text-sm font-semibold text-sd-ink">
-          {km ? `${km} km` : status === 'rest' ? '—' : ''}
+          {km ? `${km} km` : status === 'rest' ? '--' : ''}
         </span>
         {log?.actual_distance_km != null ? (
           <span className="sd-numeral text-[10px] text-ink-sage">

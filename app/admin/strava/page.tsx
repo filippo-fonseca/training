@@ -67,11 +67,11 @@ async function loadData(): Promise<StravaData> {
 
 // -- formatting -------------------------------------------------------------
 function km(m: number | null): string {
-  if (m == null) return '—';
+  if (m == null) return '--';
   return `${(m / 1000).toFixed(1)} km`;
 }
 function durationText(s: number | null): string {
-  if (s == null) return '—';
+  if (s == null) return '--';
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = Math.floor(s % 60);
@@ -89,7 +89,7 @@ function hrText(a: StravaActivity): string | null {
   return a.average_heartrate != null ? `${Math.round(a.average_heartrate)} bpm` : null;
 }
 function activityDate(a: StravaActivity): string {
-  if (!a.start_date) return '—';
+  if (!a.start_date) return '--';
   return new Date(a.start_date).toLocaleDateString('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',
@@ -236,12 +236,12 @@ export default async function StravaAdminPage({
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Athlete</dt>
                     <dd className="sd-numeral text-sd-ink-dull">
-                      {connection.strava_athlete_id ?? '—'}
+                      {connection.strava_athlete_id ?? '--'}
                     </dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Scope</dt>
-                    <dd className="text-sd-ink-dull">{connection.scope ?? '—'}</dd>
+                    <dd className="text-sd-ink-dull">{connection.scope ?? '--'}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Activities</dt>
