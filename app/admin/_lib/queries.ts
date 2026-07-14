@@ -4,7 +4,16 @@
 // safe "is the database reachable / seeded" probe used for graceful states.
 
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { getWeeks, getDays, getSessionsForDay, getAlternativesForDay, getPlan, DEFAULT_PLAN_SLUG } from '@/lib/db';
+import {
+  getWeeks,
+  getDays,
+  getSessionsForDay,
+  getAlternativesForDay,
+  getPlan,
+  getStravaActivities,
+  getActivityLinksForSessions,
+  DEFAULT_PLAN_SLUG,
+} from '@/lib/db';
 import { todayInNewYork } from '@/components/calendar/date-utils';
 import type {
   Plan,
@@ -14,6 +23,7 @@ import type {
   DayAlternative,
   SessionLog,
   HealthEntry,
+  StravaActivity,
 } from '@/lib/types/database';
 
 export interface PlanSummary {
@@ -250,6 +260,35 @@ export async function getLogRowsForWeek(planId: string, weekIndex: number): Prom
     log: logByDay.get(day.id) ?? null,
     alternatives: altsByDay.get(day.id) ?? [],
   }));
+}
+
+export interface StravaPickerData {
+  /** Every synced activity, newest first (empty when Strava is unused). */
+  activities: StravaActivity[];
+  /** day_session_id -> set of linked strava_activities row ids. */
+  linkedBySession: Map<string, Set<string>>;
+}
+
+/** Synced activities plus the current links for a set of sessions, for the
+ *  evidence picker on /admin/log. Never throws: an unconfigured Strava area
+ *  degrades to an empty picker rather than breaking the log page. */
+export async function getStravaPickerData(sessionIds: string[]): Promise<StravaPickerData> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const [activities, links] = await Promise.all([
+      getStravaActivities(supabase),
+      getActivityLinksForSessions(supabase, sessionIds),
+    ]);
+    const linkedBySession = new Map<string, Set<string>>();
+    for (const l of links) {
+      const set = linkedBySession.get(l.day_session_id) ?? new Set<string>();
+      set.add(l.strava_activity_id);
+      linkedBySession.set(l.day_session_id, set);
+    }
+    return { activities, linkedBySession };
+  } catch {
+    return { activities: [], linkedBySession: new Map() };
+  }
 }
 
 export interface HealthDayRow {

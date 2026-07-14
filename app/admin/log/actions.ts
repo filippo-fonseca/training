@@ -3,7 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/owner';
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { upsertLog, deleteLog } from '@/lib/db';
+import { upsertLog, deleteLog, setSessionActivityLinks, getActivityLinksForSessions } from '@/lib/db';
+import { backfillActivityPhoto } from '@/lib/strava';
 import type { TrafficLight } from '@/lib/types/database';
 import { str, num, int, fail, OK, dbMessage, type ActionResult } from '@/app/admin/_lib/form';
 import { deriveActualPaceText } from '@/components/logging/pace';
@@ -63,4 +64,44 @@ export async function deleteSessionLog(planDayId: string): Promise<void> {
   const supabase = await createServerSupabaseClient();
   await deleteLog(supabase, planDayId);
   revalidateAfterLog();
+}
+
+/**
+ * Replace the set of Strava activities linked to a session (the evidence
+ * picker's multi-select). Newly linked activities get a one-time detail fetch to
+ * backfill their primary photo (best-effort; see lib/strava/sync.ts). Linking
+ * >= 1 activity marks the session done everywhere; the derivation lives in
+ * lib/derive, not here.
+ */
+export async function saveActivityLinks(
+  daySessionId: string,
+  _prev: ActionResult,
+  fd: FormData,
+): Promise<ActionResult> {
+  await requireOwner();
+  const supabase = await createServerSupabaseClient();
+
+  const activityIds = fd
+    .getAll('activity_ids')
+    .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+    .map((v) => v.trim());
+
+  try {
+    const before = new Set(
+      (await getActivityLinksForSessions(supabase, [daySessionId])).map(
+        (l) => l.strava_activity_id,
+      ),
+    );
+    await setSessionActivityLinks(supabase, daySessionId, activityIds);
+
+    // Backfill photos only for activities that are newly linked (rate-limit
+    // friendly: one detail request per new link, none on unlink or no-op saves).
+    for (const id of activityIds) {
+      if (!before.has(id)) await backfillActivityPhoto(supabase, id);
+    }
+  } catch (e) {
+    return fail(dbMessage('Save links', e instanceof Error ? e.message : 'unknown error'));
+  }
+  revalidateAfterLog();
+  return OK;
 }
