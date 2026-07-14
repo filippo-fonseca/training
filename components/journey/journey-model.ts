@@ -15,7 +15,13 @@ import type {
   SessionLog,
   DayDetail,
 } from "@/lib/db";
-import { effectiveActual, type ActivityEvidence, type EffectiveActual } from "@/lib/derive";
+import {
+  effectiveActual,
+  phaseForWeek,
+  assignWeeksToPhases,
+  type ActivityEvidence,
+  type EffectiveActual,
+} from "@/lib/derive";
 import { countdown, daysBetween, type Countdown } from "./journey-time";
 
 /**
@@ -188,25 +194,25 @@ export function computeView(bundle: JourneyBundle, todayISO: string): JourneyVie
   const weekIndex = currentWeek?.week_index ?? 1;
   const started = !!(plan.start_date && todayISO >= plan.start_date);
 
-  // Phase containing the current week.
-  const currentPhase =
-    phases.find(
-      (p) =>
-        (p.start_week == null || weekIndex >= p.start_week) &&
-        (p.end_week == null || weekIndex <= p.end_week),
-    ) ?? null;
+  // Phase containing the current week, by date containment (the shared
+  // membership rule in lib/derive). The current week's start_date decides which
+  // phase owns it; the phase's own week span is the set of weeks that match it.
+  const currentPhase = currentWeek ? phaseForWeek(phases, currentWeek) : null;
   const phaseLabel = currentPhase?.name ?? currentWeek?.phase_label ?? "";
-  const phaseStart = currentPhase?.start_week ?? weekIndex;
-  const phaseEnd = currentPhase?.end_week ?? weekIndex;
-  const phaseWeekCount = Math.max(1, phaseEnd - phaseStart + 1);
-  const phaseWeek = clamp(weekIndex - phaseStart + 1, 1, phaseWeekCount);
+  const phaseWeeks = currentPhase
+    ? assignWeeksToPhases(phases, weeks).byPhaseId.get(currentPhase.id) ?? []
+    : [];
+  const phaseWeekCount = Math.max(1, phaseWeeks.length);
+  const posInPhase =
+    currentWeek != null ? phaseWeeks.findIndex((w) => w.id === currentWeek.id) : -1;
+  const phaseWeek = clamp(posInPhase >= 0 ? posInPhase + 1 : 1, 1, phaseWeekCount);
 
   // Progress: how far today sits into the current phase and the whole plan.
   const intoWeek = currentWeek?.start_date
     ? clamp(daysBetween(currentWeek.start_date, todayISO), 0, 6)
     : 0;
   const dayFrac = (intoWeek + 1) / 7; // count today as a day in progress
-  const phaseProgress = clamp((weekIndex - phaseStart + dayFrac) / phaseWeekCount);
+  const phaseProgress = clamp((phaseWeek - 1 + dayFrac) / phaseWeekCount);
 
   let planProgress = 0;
   if (plan.start_date && plan.end_date) {
