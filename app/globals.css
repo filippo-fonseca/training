@@ -168,14 +168,47 @@
     color: var(--sd-ink);
   }
 
-  /* Canonical cyan focus ring, everywhere */
+  /* Canonical cyan focus ring, everywhere. The box-shadow ring follows the
+     element's own border-radius, so we must NOT force a radius here (that would
+     un-round pills/circles the instant they take focus). */
   :focus-visible {
     outline: none;
     box-shadow:
       0 0 0 2px var(--sd-app),
       0 0 0 4px var(--sd-accent),
       0 0 12px var(--hud-cyan-glow);
-    border-radius: var(--sd-radius-chrome);
+  }
+
+  /* Interaction affordance: a pointer cursor on EVERY interactive element, so
+     the whole app reads as tappable. Native controls, links, role=button, the
+     summary marker, and label-for targets all qualify. Opt-in escape hatch:
+     .sd-interactive for bespoke clickable wrappers. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  label[for],
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  .sd-interactive {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  select:disabled,
+  input:disabled,
+  textarea:disabled,
+  .sd-interactive[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  /* Snappy default for text links and inline color transitions. */
+  a {
+    transition: color 140ms var(--ease-out-quart);
   }
 
   /* Quiet, token-driven scrollbars */
@@ -389,6 +422,28 @@
   }
 }
 
+/* Progress fill draws in horizontally from the left (transform-only). */
+@keyframes sd-progress-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Nav active indicator: a short accent bar wipes in from the top. */
+@keyframes sd-nav-indicator {
+  from {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 @layer utilities {
   /* Standard staggered entrance. Set --sd-stagger inline per index. */
   .sd-enter {
@@ -420,12 +475,82 @@
     filter: drop-shadow(rgba(0, 0, 0, 0.6) 0 12px 38px);
   }
 
+  /* Progress fill draw-in: grows from the left on mount. transform-origin left
+     keeps the rounded cap intact. Killed under reduced motion. */
+  .sd-progress-fill {
+    transform-origin: left center;
+    animation: sd-progress-grow 640ms var(--ease-out-quart) forwards;
+    will-change: transform;
+  }
+
+  /* Nav active accent bar: a 2px cyan indicator that wipes in from the top. */
+  .sd-nav-indicator {
+    transform-origin: top center;
+    animation: sd-nav-indicator 220ms var(--ease-out-quart) forwards;
+    will-change: transform, opacity;
+  }
+
   /* Soft-landing hover for tiles/cards: shadow + translate, no scale */
   .sd-soft-hover {
     transition:
+      transform 200ms var(--ease-soft-landing),
       box-shadow 200ms var(--ease-soft-landing),
       border-color 150ms var(--ease-out-quart),
       background-color 150ms var(--ease-out-quart);
+  }
+
+  /* Interactive entity card: a subtle 2px lift, an accent-tinted hairline, and
+     a soft cyan glow on hover. Compositor-only (transform/box-shadow), so no
+     layout shift. Press dips back down. This is the "alive" panel behavior. */
+  .sd-card-hover {
+    transition:
+      transform 200ms var(--ease-soft-landing),
+      box-shadow 200ms var(--ease-soft-landing),
+      border-color 150ms var(--ease-out-quart),
+      background-color 150ms var(--ease-out-quart);
+  }
+  .sd-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--sd-accent) 34%, var(--sd-line));
+    box-shadow:
+      var(--sd-bevel),
+      0 10px 26px rgb(0 0 0 / 0.22),
+      var(--sd-glow-subtle);
+  }
+  .sd-card-hover:active {
+    transform: translateY(0);
+    transition-duration: 100ms;
+  }
+
+  /* Lift for smaller tappable tiles/rows/chips (no card chrome of its own):
+     a 1px lift + border/bg transition on hover, a crisp press dip. */
+  .sd-lift {
+    transition:
+      transform 160ms var(--ease-out-quart),
+      box-shadow 200ms var(--ease-soft-landing),
+      border-color 150ms var(--ease-out-quart),
+      background-color 150ms var(--ease-out-quart),
+      color 150ms var(--ease-out-quart);
+  }
+  .sd-lift:hover {
+    transform: translateY(-1px);
+  }
+  .sd-lift:active {
+    transform: translateY(0.5px) scale(0.985);
+    transition-duration: 100ms;
+  }
+
+  /* Press-only feedback for controls that shouldn't lift (icon buttons, chips
+     inside dense rows): a light scale dip on active. */
+  .sd-press {
+    transition:
+      transform 120ms var(--ease-out-quart),
+      background-color 150ms var(--ease-out-quart),
+      border-color 150ms var(--ease-out-quart),
+      color 150ms var(--ease-out-quart);
+  }
+  .sd-press:active {
+    transform: scale(0.96);
   }
 }
 
@@ -455,6 +580,17 @@
   }
   .sd-drift,
   .sd-drift-alt {
+    animation: none !important;
+  }
+  /* Kill hover/press translation + scale so nothing moves under reduced motion,
+     while border/glow/color feedback still reads. */
+  .sd-card-hover:hover,
+  .sd-card-hover:active,
+  .sd-lift:hover,
+  .sd-lift:active,
+  .sd-press:active,
+  .sd-progress-fill {
+    transform: none !important;
     animation: none !important;
   }
 }
