@@ -20,9 +20,11 @@ import { countdown, daysBetween, type Countdown } from "./journey-time";
 /**
  * The public-safe subset of a `plans` row. This is the only shape of plan
  * data allowed to cross into the view model and, from there, the client
- * component boundary. It intentionally omits every clinical/private field on
- * the row (`athlete_notes`, `medical_notes`, `athlete_age`, internal goal
- * targets, etc.) — only what the public journey page actually renders.
+ * component boundary. It intentionally omits every private field on the row
+ * (athlete_age, internal goal targets, etc.); the clinical narrative
+ * (medical_notes, athlete_notes) is not even on the public plans row, living
+ * only in the owner-only plan_private_notes table per decision D1. This keeps
+ * only what the public journey page actually renders.
  */
 export type PublicPlan = Pick<
   Plan,
