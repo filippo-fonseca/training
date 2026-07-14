@@ -10,30 +10,35 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Sidebar identity lockup in the dashboard masthead grammar: an accent tick
+ *  plus the "THE COMEBACK" wordmark in mono small-caps. */
 function AdminBrand() {
   return (
     <div className="flex items-center gap-2">
-      <span
-        className="grid size-6 place-items-center rounded-md"
-        style={{
-          background: 'linear-gradient(160deg, var(--sd-accent-faint), var(--sd-accent-deep))',
-          boxShadow: 'var(--sd-bevel), 0 0 16px var(--hud-cyan-glow)',
-        }}
-      >
-        <span className="size-2 rounded-full" style={{ background: 'var(--sd-accent-ink)' }} />
+      <span aria-hidden className="size-1.5 rounded-full bg-sd-accent" />
+      <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-sd-ink">
+        The Comeback
       </span>
-      <span className="sd-numeral text-sm font-semibold tracking-tight text-sd-ink">Training</span>
-      <span className="sd-stat-label mt-0.5">Admin</span>
     </div>
   );
 }
 
+/** The admin masthead strip, in the dashboard's grammar: left the
+ *  "THE COMEBACK · ADMIN" mono small-caps wordmark with an accent tick; right
+ *  the owner email chip and sign-out. */
 function AdminTopbar({ email }: { email: string }) {
   return (
-    <div className="flex w-full items-center gap-3">
-      <span className="sd-stat-label">Owner console</span>
-      <div className="ml-auto flex items-center gap-3">
-        <span className="hidden text-xs text-sd-ink-faint sm:inline">{email}</span>
+    <div className="flex w-full items-center justify-between gap-3">
+      <div className="flex min-w-0 items-center gap-2">
+        <span aria-hidden className="size-1.5 rounded-full bg-sd-accent" />
+        <span className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-sd-ink">
+          The Comeback · Admin
+        </span>
+      </div>
+      <div className="flex shrink-0 items-center gap-3">
+        <span className="hidden items-center rounded-full border border-sd-line bg-sd-darker-box px-2.5 py-1 font-mono text-[11px] text-sd-ink-dull sm:inline-flex">
+          {email}
+        </span>
         <form action={signOut}>
           <button
             type="submit"
