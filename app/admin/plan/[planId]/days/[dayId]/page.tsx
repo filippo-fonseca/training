@@ -245,7 +245,7 @@ function SessionFields({ slot, session }: { slot: SessionSlot; session?: DaySess
         </Field>
         <Field label="Category" htmlFor={`cat-${uid}`}>
           <Select id={`cat-${uid}`} name="category" defaultValue={session?.category ?? ''}>
-            <option value="">—</option>
+            <option value="">--</option>
             {CATEGORIES.map(([v, l]) => (
               <option key={v} value={v}>
                 {l}

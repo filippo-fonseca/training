@@ -300,7 +300,7 @@ export default async function StravaAdminPage({
                           name="plan_day_id"
                           required
                           defaultValue=""
-                          className="rounded-md border border-sd-line bg-sd-input px-2 py-1.5 text-tiny text-sd-ink"
+                          className="rounded-sd-chrome border border-sd-line bg-sd-input px-2 py-1.5 text-tiny text-sd-ink transition-[border-color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--sd-accent)_28%,var(--sd-line))]"
                         >
                           <option value="" disabled>
                             Link to day…
