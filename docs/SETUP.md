@@ -72,6 +72,7 @@ Copy `.env.example` to `.env.local` and fill in:
 | `STRAVA_CLIENT_SECRET` | for Strava | From your Strava API application, server-only |
 | `STRAVA_REDIRECT_URI` | optional | Overrides the derived OAuth callback URL; defaults to `<origin>/api/strava/callback` |
 | `CRON_SECRET` | for cron | Bearer token the scheduled sync route checks; generate a long random string |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | optional | Referrer-restricted browser Maps key. When set, the course widget renders a dark Google map of the real course (static image on the card, interactive map in the overlay). When unset, it falls back to the self-contained OpenStreetMap SVG and makes zero external requests |
 
 ## 5. Strava API app setup (optional)
 
