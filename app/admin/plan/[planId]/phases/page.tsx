@@ -76,7 +76,7 @@ export default async function PhasesPage({ params }: { params: Promise<{ planId:
               title={`${phase.phase_index}. ${phase.name}`}
               subtitle={
                 phase.start_week != null || phase.end_week != null
-                  ? `Weeks ${phase.start_week ?? '?'}–${phase.end_week ?? '?'}`
+                  ? `Weeks ${phase.start_week ?? '?'}-${phase.end_week ?? '?'}`
                   : undefined
               }
               deleteAction={deletePhase.bind(null, planId, phase.id)}

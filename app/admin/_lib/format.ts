@@ -18,7 +18,7 @@ export function formatDate(iso: string | null | undefined): string {
 
 export function formatDateRange(start: string | null | undefined, end: string | null | undefined): string {
   if (!start && !end) return 'No dates set';
-  return `${formatDate(start)} – ${formatDate(end)}`;
+  return `${formatDate(start)} to ${formatDate(end)}`;
 }
 
 /** Numeric km with one decimal, or a dash. */

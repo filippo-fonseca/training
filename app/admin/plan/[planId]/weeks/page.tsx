@@ -113,7 +113,7 @@ export default async function Page({ params }: { params: Promise<{ planId: strin
             <CrudRow
               key={week.id}
               title={`Week ${week.week_index}${week.phase_label ? ' · ' + week.phase_label : ''}`}
-              subtitle={`Planned ${week.planned_km ?? '—'} km · range ${week.range_min_km ?? '?'}–${week.range_max_km ?? '?'}`}
+              subtitle={`Planned ${week.planned_km ?? '—'} km · range ${week.range_min_km ?? '?'}-${week.range_max_km ?? '?'}`}
               deleteAction={deleteWeek.bind(null, planId, week.id)}
               deleteConfirm={`Delete week ${week.week_index}?`}
             >
