@@ -247,3 +247,38 @@ Easings as tokens: `--ease-out-quart: cubic-bezier(0.25,1,0.5,1)`, `--ease-soft-
 - **Specific components** (`components/wiki/explorer`, `InspectorShell`, dimensional Folder/Page icons) are code references, not requirements; re-implement the *grammar* described in §7.
 - **User-set emoji preservation rule** (wiki-specific) — irrelevant unless the tracker has user emoji.
 - The old `#2599FF` blue accent appears in early constitution text; it was SUPERSEDED by cyan (D1b). Cyan is the accent.
+
+---
+
+## 11. Public one-page dashboard (2026 extension)
+
+The landing page (`/`) is a one-viewport widget dashboard, sealed in
+`.bgsd/runs/sesh-1784048869000/specs/design-constitution.md`. This section
+records what changed from the brief above; the constitution is authoritative.
+
+- **Typeface:** the app face is now **Space Grotesk** (`next/font/google`,
+  exposed as `--font-grotesk` and leading the `--font-sans` stack). It carries
+  display numerals, headings, and body. JetBrains Mono stays the selective
+  small-caps signature (stat labels, masthead microcopy, km/pace chips). No
+  serif.
+- **Layout:** a slim masthead strip (THE COMEBACK wordmark, manifesto,
+  "EST. 2026 · LOWELL, MA" + a live day counter) over a 12x6 CSS-grid bento.
+  No page scroll at 1440x900 or 1280x800 (a shipping gate); below 1024px the
+  grid reflows and may scroll. Widgets size with `min()`/`clamp()`; no fixed
+  heights that force overflow.
+- **Widgets:** countdown, today (with a Strava VERIFIED badge, onPlan-gated per
+  D2), latest-run spotlight (photo scrim or a generated route pattern), a
+  hand-built stylized course SVG (no map libraries), a week-volume radial
+  gauge, a compressed contributions heatmap, stat tiles, and a next-milestone
+  chip. Every widget expands into an accessible overlay dialog (role=dialog,
+  aria-modal, focus trap, Esc + backdrop close, internal scroll) with a
+  `#w=<key>` deep-link that opens on load and closes on history-back.
+- **New tokens:** `--sd-glow` (radial cyan wash allowed behind numerals and
+  graphics only, never under running copy), `--sd-scrim` (bottom-up AA scrim
+  for photo cards), and `--strava` (brand orange, used only for the Verified
+  badge dot and outbound-link hover).
+- **Data:** one server pass assembles every widget through the existing query
+  and derivation layer (the journey view model, the `/stats` and `/progress`
+  loaders, and `getLatestVerifiedActivity`), passing public-safe projections
+  only. The whole dashboard renders against the fixture fallback with
+  intentional empty states when the environment is unconfigured.
