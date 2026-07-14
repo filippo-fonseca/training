@@ -50,7 +50,7 @@ export function CalendarNav({
           <ArrowLink href={prevHref} label="Previous" dir="prev" />
           <Link
             href={todayHref}
-            className="rounded-full border border-sd-line bg-sd-box px-3 py-1 text-xs font-medium text-sd-ink-dull transition-colors duration-150 hover:bg-sd-hover hover:text-sd-ink"
+            className="sd-press rounded-full border border-sd-line bg-sd-box px-3 py-1 text-xs font-medium text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink"
           >
             Today
           </Link>
@@ -75,7 +75,7 @@ function ToggleLink({
       href={href}
       aria-current={active ? 'true' : undefined}
       className={cn(
-        'rounded-full px-3 py-1 text-xs font-medium transition-colors duration-150',
+        'sd-press rounded-full px-3 py-1 text-xs font-medium',
         active ? 'bg-sd-selected text-sd-ink' : 'text-sd-ink-dull hover:text-sd-ink',
       )}
     >
@@ -108,7 +108,7 @@ function ArrowLink({
     );
   }
   return (
-    <Link href={href} aria-label={label} className={cn(base, 'text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink')}>
+    <Link href={href} aria-label={label} className={cn(base, 'sd-press text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink')}>
       {glyph}
     </Link>
   );

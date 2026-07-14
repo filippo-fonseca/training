@@ -1,5 +1,6 @@
 import type { DayAlternative, AlternativeGate } from '@/lib/types/database';
 import { gateHue, chip } from './status';
+import { staggerStyle } from '@/lib/design/motion';
 import { formatKm } from './format';
 
 const GATE_ORDER: Record<AlternativeGate, number> = { green: 0, yellow: 1, red: 2 };
@@ -22,13 +23,13 @@ export function Alternatives({ alternatives }: { alternatives: DayAlternative[] 
     <div className="flex flex-col gap-2">
       <span className="sd-stat-label">Symptom-gated alternatives</span>
       <div className="grid gap-2 sm:grid-cols-3">
-        {sorted.map((alt) => {
+        {sorted.map((alt, i) => {
           const hue = gateHue(alt.gate);
           return (
             <div
               key={alt.id}
-              className="flex flex-col gap-1.5 rounded-sd-tile border p-3"
-              style={chip(hue)}
+              className="sd-enter flex flex-col gap-1.5 rounded-sd-tile border p-3"
+              style={{ ...chip(hue), ...staggerStyle(i) }}
             >
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-sd-ink">
