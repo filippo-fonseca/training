@@ -8,7 +8,7 @@
     "start": "next start -p ${PORT:-3000}",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test lib/strava/match.test.ts lib/strava/oauth.test.ts lib/derive/session-evidence.test.ts",
+    "test": "tsx --test lib/strava/match.test.ts lib/strava/oauth.test.ts lib/derive/session-evidence.test.ts lib/derive/phase-membership.test.ts",
     "seed:generate": "tsx scripts/seed/generate-seed.ts",
     "seed:validate": "tsx scripts/seed/validate.ts",
     "seed": "npm run seed:generate && npm run seed:validate"
