@@ -19,7 +19,7 @@ export default async function AdminHome() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Owner console"
+        title="Overview"
         description="Manage the training plan and its structured data. Public surfaces read the same tables through row-level security."
       />
 
