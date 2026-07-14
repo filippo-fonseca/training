@@ -32,11 +32,14 @@ export function NextMilestone({ view }: { view: JourneyView }) {
   const next = view.nextMilestone;
 
   if (!next) {
+    const racePast = view.race.countdown.status === "past";
     return (
       <Panel className="flex flex-col gap-2">
         <span className="sd-stat-label">Next milestone</span>
         <p className="text-sm text-sd-ink-dull">
-          Every milestone is behind us. All that is left is the finish.
+          {racePast
+            ? "Every milestone is behind us. All that is left was the finish."
+            : "No milestone is on the calendar ahead. The next block will bring the first checkpoint."}
         </p>
       </Panel>
     );
