@@ -1,25 +1,21 @@
-import Link from "next/link";
+import { Suspense } from "react";
 import { BoldAmbient } from "@/components/ui/bold-ambient";
+import { JourneyBoard } from "@/components/journey/journey-board";
+import { JourneySkeleton } from "@/components/journey/journey-skeleton";
+
+// "Today" is resolved per request (America/New_York), so the journey must render
+// dynamically rather than being frozen at build time.
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 text-center">
-      <BoldAmbient focal />
-      <div className="sd-enter relative z-10 flex flex-col items-center gap-6">
-        <span className="sd-stat-label">Training Tracker</span>
-        <h1 className="sd-punch max-w-2xl text-balance text-4xl font-bold tracking-tight text-sd-ink sm:text-5xl">
-          A precision instrument panel for the long build.
-        </h1>
-        <p className="max-w-md text-pretty text-sd-ink-dull">
-          An open-source tracker for structured endurance plans. The first
-          journey: a comeback to the Baystate Half, October 2026.
-        </p>
-        <Link
-          href="/design"
-          className="sd-btn sd-btn-primary mt-2"
-        >
-          View design system
-        </Link>
+    <main className="relative min-h-dvh overflow-hidden">
+      {/* Whisper ambient behind the whole page; the hero owns the one focal orb. */}
+      <BoldAmbient whisper fixed />
+      <div className="relative z-10">
+        <Suspense fallback={<JourneySkeleton />}>
+          <JourneyBoard />
+        </Suspense>
       </div>
     </main>
   );
