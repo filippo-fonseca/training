@@ -54,7 +54,7 @@ export default async function HealthPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Health"
-        description="Injury checkpoint and recovery tracking, mirroring the plan's daily forms. Owner-only — never shown publicly."
+        description="Injury checkpoint and recovery tracking, mirroring the plan's daily forms. Owner-only, never shown publicly."
         crumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Health' }]}
       />
 
@@ -86,7 +86,7 @@ function DayHealthRow({ planId, row, isToday }: { planId: string; row: HealthDay
   const { day, entry } = row;
 
   return (
-    <div className="sd-panel sd-soft-hover overflow-hidden p-0 hover:border-sd-selected">
+    <div className="sd-panel sd-card-hover overflow-hidden p-0">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-sd-ink">

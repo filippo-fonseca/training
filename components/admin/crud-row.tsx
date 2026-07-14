@@ -28,7 +28,7 @@ export function CrudRow({
   children,
 }: CrudRowProps) {
   return (
-    <div className="sd-panel sd-soft-hover overflow-hidden p-0 hover:border-sd-selected">
+    <div className="sd-panel sd-card-hover overflow-hidden p-0">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-sd-ink">{title}</div>
