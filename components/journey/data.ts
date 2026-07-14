@@ -19,7 +19,13 @@ import {
   type SessionLog,
   type DayDetail,
 } from "@/lib/db";
-import { computeView, findCurrentWeek, type JourneyBundle, type JourneyView } from "./journey-model";
+import {
+  computeView,
+  findCurrentWeek,
+  toPublicPlan,
+  type JourneyBundle,
+  type JourneyView,
+} from "./journey-model";
 import { fixtureBundle } from "./fixture";
 import { RACE_TIMEZONE, todayInZone } from "./journey-time";
 
@@ -42,12 +48,17 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
   if (!client) return fixtureBundle();
 
   try {
-    const plan = await getPlan(client);
+    // getPlan does `select('*')` and returns the full row, including clinical
+    // fields (medical_notes, athlete_notes) that must never reach an
+    // anonymous client. Project to the public-safe subset immediately, before
+    // anything derived from `plan` can cross into the view model / RSC payload.
+    const rawPlan = await getPlan(client);
+    const plan = toPublicPlan(rawPlan);
     const [phases, weeks, milestones, logs] = await Promise.all([
-      getPhases(client, plan.id),
-      getWeeks(client, plan.id),
-      getMilestones(client, plan.id),
-      getLogsForPlan(client, plan.id),
+      getPhases(client, rawPlan.id),
+      getWeeks(client, rawPlan.id),
+      getMilestones(client, rawPlan.id),
+      getLogsForPlan(client, rawPlan.id),
     ]);
 
     // Days of the week that contains today, for the weekly snapshot.

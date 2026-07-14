@@ -15,7 +15,7 @@ import type {
   DaySession,
   Milestone,
 } from "@/lib/db";
-import type { JourneyBundle } from "./journey-model";
+import { toPublicPlan, type JourneyBundle } from "./journey-model";
 
 const PLAN_ID = "410445c8-ed26-5234-9c12-1427b05b452a";
 const WEEK1_ID = "7bdbc2ff-75c8-51d2-b2af-366876b3c95d";
@@ -278,7 +278,10 @@ const milestones: Milestone[] = [
 /** The full day-one bundle, ready for computeView. */
 export function fixtureBundle(): JourneyBundle {
   return {
-    plan,
+    // Same public-safe projection as the live path, so the fixture (the
+    // fallback that actually serves when Supabase env vars are absent) never
+    // leaks the hand-authored clinical fixture fields (athlete_notes, etc.).
+    plan: toPublicPlan(plan),
     phases,
     weeks,
     milestones,

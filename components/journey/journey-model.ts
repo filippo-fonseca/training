@@ -17,9 +17,50 @@ import type {
 } from "@/lib/db";
 import { countdown, daysBetween, type Countdown } from "./journey-time";
 
+/**
+ * The public-safe subset of a `plans` row. This is the only shape of plan
+ * data allowed to cross into the view model and, from there, the client
+ * component boundary. It intentionally omits every clinical/private field on
+ * the row (`athlete_notes`, `medical_notes`, `athlete_age`, internal goal
+ * targets, etc.) — only what the public journey page actually renders.
+ */
+export type PublicPlan = Pick<
+  Plan,
+  | "id"
+  | "slug"
+  | "title"
+  | "status"
+  | "race_name"
+  | "race_distance_km"
+  | "race_date"
+  | "race_location"
+  | "start_date"
+  | "end_date"
+  | "north_star"
+>;
+
+/** Project a fetched `plans` row down to the public-safe subset. Never spread
+ * the raw row — list fields explicitly so a new column added to `plans`
+ * (e.g. another clinical note) is private by default, not public by default. */
+export function toPublicPlan(plan: Plan): PublicPlan {
+  return {
+    id: plan.id,
+    slug: plan.slug,
+    title: plan.title,
+    status: plan.status,
+    race_name: plan.race_name,
+    race_distance_km: plan.race_distance_km,
+    race_date: plan.race_date,
+    race_location: plan.race_location,
+    start_date: plan.start_date,
+    end_date: plan.end_date,
+    north_star: plan.north_star,
+  };
+}
+
 /** Normalized inputs, gathered by the data layer for the day being viewed. */
 export interface JourneyBundle {
-  plan: Plan;
+  plan: PublicPlan;
   phases: PlanPhase[];
   weeks: PlanWeek[];
   milestones: Milestone[];
@@ -70,7 +111,7 @@ export interface NextMilestone {
 export interface JourneyView {
   source: "live" | "fixture";
   todayISO: string;
-  plan: Plan;
+  plan: PublicPlan;
   race: RaceInfo;
   started: boolean;
   weekIndex: number;
