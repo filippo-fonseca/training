@@ -166,27 +166,31 @@ function round1(n: number): number {
 // On-plan vs off-plan taxonomy.
 //
 // A linked run "completes" a planned session only when the day actually planned
-// something a run can satisfy. Per the sealed cron spec, a runnable session is
-// any category that is neither rest nor a strength-only session; rest and
-// strength days are OFF-PLAN targets, so a run on one logs volume for the day
-// but never marks that session done (decision D2). The auto-linker uses the same
-// taxonomy to choose whether to attach a run to a session (on-plan) or to the
-// day itself (off-plan).
+// a RUNNING session. POSITIVE run-family matching (Conductor ruling): a session
+// is auto-linkable only when its category is a running category (easy/long/
+// quality/race, matching RUN_CATEGORIES in lib/strava/match.ts). Rest, strength,
+// bike, and any other cross-training category are OFF-PLAN targets: a Run on one
+// of those days links day-level, logging volume for the day without ever marking
+// that session done (decision D2). The auto-linker uses this same taxonomy to
+// choose whether to attach a run to a session (on-plan) or to the day (off-plan).
 // -----------------------------------------------------------------------------
 
-/** Categories a linked run can NEVER complete (rest / strength-type). */
-const NON_RUNNABLE_CATEGORIES = new Set<string>(['rest', 'strength_only']);
+/** Running session categories a linked Run activity can complete. Keep in
+ *  lockstep with RUN_CATEGORIES in lib/strava/match.ts (the SessionCategory
+ *  enum's run family). */
+const RUN_SESSION_CATEGORIES = new Set<string>(['easy_run', 'long_run', 'quality_run', 'race']);
 
-/** True when a session's category is one a linked run completes (on-plan). */
-export function isRunnableSessionCategory(category: string | null | undefined): boolean {
-  return category != null && !NON_RUNNABLE_CATEGORIES.has(category);
+/** True when a session's category is a running category, i.e. one a linked Run
+ *  completes (on-plan). Bike/strength/rest/cross-training are never linkable. */
+export function isRunSessionCategory(category: string | null | undefined): boolean {
+  return category != null && RUN_SESSION_CATEGORIES.has(category);
 }
 
-/** True when a day has at least one runnable (on-plan) session. */
-export function dayHasRunnableSession(
+/** True when a day has at least one running (on-plan linkable) session. */
+export function dayHasRunSession(
   categories: Array<string | null | undefined>,
 ): boolean {
-  return categories.some(isRunnableSessionCategory);
+  return categories.some(isRunSessionCategory);
 }
 
 // -----------------------------------------------------------------------------

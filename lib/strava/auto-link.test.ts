@@ -52,8 +52,9 @@ test('chicagoCalendarDate converts a UTC start to the Chicago civil date', () =>
 });
 
 // -----------------------------------------------------------------------------
-// Running-category session selection (runnable = not rest / strength; prefer
-// primary when both slots qualify).
+// Running-category session selection (POSITIVE run-family match: easy/long/
+// quality/race only; rest, strength, bike, and other cross-training never
+// qualify; prefer primary when both slots qualify).
 // -----------------------------------------------------------------------------
 test('pickRunSession prefers the primary running session', () => {
   const s = pickRunSession([
@@ -63,7 +64,7 @@ test('pickRunSession prefers the primary running session', () => {
   assert.equal(s?.id, 'pri');
 });
 
-test('pickRunSession falls back to a runnable secondary when primary is not runnable', () => {
+test('pickRunSession falls back to a running secondary when primary is not a run', () => {
   const s = pickRunSession([
     { id: 'pri', slot: 'primary', category: 'strength_only' },
     { id: 'sec', slot: 'secondary', category: 'easy_run' },
@@ -81,9 +82,14 @@ test('pickRunSession returns null when the day has only rest/strength sessions',
   );
 });
 
-test('pickRunSession treats bike as runnable (neither rest nor strength)', () => {
-  const s = pickRunSession([{ id: 'bike', slot: 'primary', category: 'bike' }]);
-  assert.equal(s?.id, 'bike');
+test('pickRunSession never selects a bike (cross-training) session', () => {
+  assert.equal(pickRunSession([{ id: 'bike', slot: 'primary', category: 'bike' }]), null);
+  // Even alongside a bike, only the running session qualifies.
+  const s = pickRunSession([
+    { id: 'bike', slot: 'primary', category: 'bike' },
+    { id: 'run', slot: 'secondary', category: 'easy_run' },
+  ]);
+  assert.equal(s?.id, 'run');
 });
 
 // -----------------------------------------------------------------------------
@@ -216,6 +222,19 @@ test('runAutoLink falls back to a day-level (off-plan) link on a non-running day
   assert.equal(summary.offPlan, 1);
   assert.equal(store.links.length, 1);
   // Off-plan link: day_session_id is null (never marks the strength session done).
+  assert.equal(store.links[0].day_session_id, null);
+  assert.equal(store.links[0].plan_day_id, 'day-1');
+});
+
+test('runAutoLink on a bike-only day links day-level; the bike session is NOT completed', async () => {
+  const store = baseStore({
+    day_sessions: [{ id: 'bike-sess', plan_day_id: 'day-1', slot: 'primary', category: 'bike' }],
+  });
+  const summary = await runAutoLink(fakeClient(store), { now: AT_2200 });
+  assert.equal(summary.linked, 1);
+  assert.equal(summary.offPlan, 1); // off-plan, exactly like a rest day
+  assert.equal(store.links.length, 1);
+  // Day-level link: day_session_id null, so the bike session is never marked done.
   assert.equal(store.links[0].day_session_id, null);
   assert.equal(store.links[0].plan_day_id, 'day-1');
 });

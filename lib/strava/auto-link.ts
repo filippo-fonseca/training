@@ -13,7 +13,7 @@
 
 import type { TypedSupabaseClient } from '@/lib/db/client';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
-import { isRunnableSessionCategory } from '@/lib/derive';
+import { isRunSessionCategory } from '@/lib/derive';
 import { runStravaSync, type SyncResult } from './sync';
 import { stravaSportFamily } from './match';
 
@@ -85,15 +85,16 @@ interface DaySessionLite {
 }
 
 /**
- * Pick the session a run should complete: a running-category session (anything
- * that is neither rest nor strength-type), preferring the primary slot when both
- * qualify. Returns null when the day has no runnable session (→ off-plan link).
+ * Pick the session a run should complete: a RUNNING-category session (positive
+ * run-family match: easy/long/quality/race; never rest, strength, bike, or any
+ * other cross-training category), preferring the primary slot when both qualify.
+ * Returns null when the day has no running session (off-plan, day-level link).
  */
 export function pickRunSession(sessions: DaySessionLite[]): DaySessionLite | null {
-  const runnable = sessions.filter((s) => isRunnableSessionCategory(s.category));
-  if (runnable.length === 0) return null;
-  const primary = runnable.find((s) => s.slot === 'primary');
-  return primary ?? runnable[0];
+  const running = sessions.filter((s) => isRunSessionCategory(s.category));
+  if (running.length === 0) return null;
+  const primary = running.find((s) => s.slot === 'primary');
+  return primary ?? running[0];
 }
 
 /**

@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import type { SessionLog, StravaActivity } from '@/lib/types/database';
 import {
   cumulativeEvidence,
-  dayHasRunnableSession,
+  dayHasRunSession,
   effectiveActual,
   evidenceById,
   groupEvidenceByDay,
   groupEvidenceBySession,
-  isRunnableSessionCategory,
+  isRunSessionCategory,
   stravaActivityUrl,
   toActivityEvidence,
   type ActivityEvidence,
@@ -207,20 +207,23 @@ function link(partial: Partial<SessionActivityLink>): SessionActivityLink {
   } as SessionActivityLink;
 }
 
-test('isRunnableSessionCategory: rest/strength are not runnable, runs and bike are', () => {
-  assert.equal(isRunnableSessionCategory('rest'), false);
-  assert.equal(isRunnableSessionCategory('strength_only'), false);
-  assert.equal(isRunnableSessionCategory(null), false);
-  assert.equal(isRunnableSessionCategory('easy_run'), true);
-  assert.equal(isRunnableSessionCategory('long_run'), true);
-  assert.equal(isRunnableSessionCategory('race'), true);
-  assert.equal(isRunnableSessionCategory('bike'), true);
+test('isRunSessionCategory: positive run-family match only (never rest/strength/bike)', () => {
+  assert.equal(isRunSessionCategory('easy_run'), true);
+  assert.equal(isRunSessionCategory('long_run'), true);
+  assert.equal(isRunSessionCategory('quality_run'), true);
+  assert.equal(isRunSessionCategory('race'), true);
+  assert.equal(isRunSessionCategory('rest'), false);
+  assert.equal(isRunSessionCategory('strength_only'), false);
+  assert.equal(isRunSessionCategory('bike'), false); // cross-training: never run-linkable
+  assert.equal(isRunSessionCategory(null), false);
+  assert.equal(isRunSessionCategory('yoga'), false); // unknown categories default to off-plan
 });
 
-test('dayHasRunnableSession: true only when a runnable session exists', () => {
-  assert.equal(dayHasRunnableSession(['strength_only', 'rest']), false);
-  assert.equal(dayHasRunnableSession(['rest', 'easy_run']), true);
-  assert.equal(dayHasRunnableSession([]), false);
+test('dayHasRunSession: true only when a running session exists', () => {
+  assert.equal(dayHasRunSession(['strength_only', 'rest']), false);
+  assert.equal(dayHasRunSession(['bike']), false);
+  assert.equal(dayHasRunSession(['rest', 'easy_run']), true);
+  assert.equal(dayHasRunSession([]), false);
 });
 
 test('groupEvidenceByDay: a session-level link is on-plan', () => {
