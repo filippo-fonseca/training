@@ -5,6 +5,8 @@ export type {
   Database,
   Json,
   Plan,
+  PlanPrivateNotes,
+  PlanPrivateNotesInsert,
   PlanPhase,
   PlanWeek,
   PlanDay,
