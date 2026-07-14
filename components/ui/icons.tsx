@@ -88,6 +88,14 @@ export function TrophyGlyph(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ChartGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...glyph} {...props}>
+      <path d="M4 4v15.5a.5.5 0 0 0 .5.5H20M8 16.5v-4M12 16.5v-8M16 16.5v-5.5" />
+    </svg>
+  );
+}
+
 export function HeartGlyph(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...glyph} {...props}>
