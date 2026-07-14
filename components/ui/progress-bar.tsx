@@ -60,7 +60,7 @@ export function ProgressBar({
           />
         )}
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-sd-accent"
+          className="sd-progress-fill absolute inset-y-0 left-0 rounded-full bg-sd-accent"
           style={{
             width: `${fill}%`,
             boxShadow: "0 0 12px color-mix(in srgb, var(--sd-accent) 45%, transparent)",
