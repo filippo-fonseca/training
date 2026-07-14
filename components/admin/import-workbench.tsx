@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Panel } from '@/components/ui/panel';
 import { previewImport, applyImport, type PreviewResult, type ApplyResult } from '@/app/admin/import/actions';
 import type { ImportCounts } from '@/app/admin/import/_lib/schema';
+import { staggerStyle } from '@/lib/design/motion';
 
 const COUNT_KEYS: [keyof ImportCounts, string][] = [
   ['phases', 'Phases'],
@@ -20,8 +21,8 @@ const COUNT_KEYS: [keyof ImportCounts, string][] = [
 function CountGrid({ counts }: { counts: ImportCounts }) {
   return (
     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-      {COUNT_KEYS.map(([k, label]) => (
-        <div key={k} className="rounded-sd-tile border border-sd-line bg-sd-dark-box px-3 py-2">
+      {COUNT_KEYS.map(([k, label], i) => (
+        <div key={k} className="sd-enter rounded-sd-tile border border-sd-line bg-sd-dark-box px-3 py-2" style={staggerStyle(i)}>
           <div className="sd-numeral text-base font-semibold text-sd-ink">{counts[k]}</div>
           <div className="sd-stat-label mt-0.5">{label}</div>
         </div>

@@ -27,8 +27,8 @@ function Inner({ label, compact }: { label: string; compact: boolean }) {
       disabled={pending}
       aria-label={label}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-sd-chrome border border-sd-line bg-sd-box text-sd-ink-faint',
-        'transition-colors hover:border-[color-mix(in_srgb,var(--ink-coral)_40%,var(--sd-line))] hover:text-[var(--ink-coral)]',
+        'sd-press inline-flex items-center gap-1.5 rounded-sd-chrome border border-sd-line bg-sd-box text-sd-ink-faint',
+        'hover:border-[color-mix(in_srgb,var(--ink-coral)_40%,var(--sd-line))] hover:bg-[color-mix(in_srgb,var(--ink-coral)_12%,var(--sd-box))] hover:text-[var(--ink-coral)]',
         'disabled:opacity-50',
         compact ? 'p-1.5' : 'px-3 py-1.5 text-tiny font-semibold uppercase tracking-wider',
       )}
