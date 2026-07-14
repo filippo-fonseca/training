@@ -12,6 +12,7 @@ import { Field, Input, Textarea } from '@/components/admin/field';
 import { PlusGlyph } from '@/components/admin/icons';
 import { getPlanOrNull } from '@/app/admin/_lib/queries';
 import { upsertCheckpoint, deleteCheckpoint } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 /** Shared field set for both the create and edit forms. */
 function CheckpointFields({ checkpoint }: { checkpoint?: Checkpoint }) {
@@ -69,18 +70,19 @@ export default async function Page({ params }: { params: Promise<{ planId: strin
         {checkpoints.length === 0 ? (
           <EmptyState title="No checkpoints yet" description="Add the first checkpoint below." />
         ) : (
-          checkpoints.map((c) => (
-            <CrudRow
-              key={c.id}
-              title={`${c.checkpoint_index}. ${c.title}`}
-              subtitle={c.after_week != null ? `After week ${c.after_week}` : undefined}
-              deleteAction={deleteCheckpoint.bind(null, planId, c.id)}
-              deleteConfirm={`Delete checkpoint "${c.title}"?`}
-            >
-              <EntityForm action={upsertCheckpoint.bind(null, planId)} submitLabel="Save checkpoint">
-                <CheckpointFields checkpoint={c} />
-              </EntityForm>
-            </CrudRow>
+          checkpoints.map((c, i) => (
+            <div key={c.id} className="sd-enter" style={staggerStyle(i)}>
+              <CrudRow
+                title={`${c.checkpoint_index}. ${c.title}`}
+                subtitle={c.after_week != null ? `After week ${c.after_week}` : undefined}
+                deleteAction={deleteCheckpoint.bind(null, planId, c.id)}
+                deleteConfirm={`Delete checkpoint "${c.title}"?`}
+              >
+                <EntityForm action={upsertCheckpoint.bind(null, planId)} submitLabel="Save checkpoint">
+                  <CheckpointFields checkpoint={c} />
+                </EntityForm>
+              </CrudRow>
+            </div>
           ))
         )}
       </div>

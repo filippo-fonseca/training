@@ -12,6 +12,7 @@ import { Field, Input, Textarea } from '@/components/admin/field';
 import { PlusGlyph } from '@/components/admin/icons';
 import { getPlanOrNull } from '@/app/admin/_lib/queries';
 import { upsertPhase, deletePhase } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 /** Shared field set for both the create and edit forms. */
 function PhaseFields({ phase }: { phase?: PlanPhase }) {
@@ -70,22 +71,23 @@ export default async function PhasesPage({ params }: { params: Promise<{ planId:
         {phases.length === 0 ? (
           <EmptyState title="No phases yet" description="Add the first training block below." />
         ) : (
-          phases.map((phase) => (
-            <CrudRow
-              key={phase.id}
-              title={`${phase.phase_index}. ${phase.name}`}
-              subtitle={
-                phase.start_week != null || phase.end_week != null
-                  ? `Weeks ${phase.start_week ?? '?'}-${phase.end_week ?? '?'}`
-                  : undefined
-              }
-              deleteAction={deletePhase.bind(null, planId, phase.id)}
-              deleteConfirm={`Delete phase "${phase.name}"?`}
-            >
-              <EntityForm action={upsertPhase.bind(null, planId)} submitLabel="Save phase">
-                <PhaseFields phase={phase} />
-              </EntityForm>
-            </CrudRow>
+          phases.map((phase, i) => (
+            <div key={phase.id} className="sd-enter" style={staggerStyle(i)}>
+              <CrudRow
+                title={`${phase.phase_index}. ${phase.name}`}
+                subtitle={
+                  phase.start_week != null || phase.end_week != null
+                    ? `Weeks ${phase.start_week ?? '?'}-${phase.end_week ?? '?'}`
+                    : undefined
+                }
+                deleteAction={deletePhase.bind(null, planId, phase.id)}
+                deleteConfirm={`Delete phase "${phase.name}"?`}
+              >
+                <EntityForm action={upsertPhase.bind(null, planId)} submitLabel="Save phase">
+                  <PhaseFields phase={phase} />
+                </EntityForm>
+              </CrudRow>
+            </div>
           ))
         )}
       </div>

@@ -12,6 +12,7 @@ import { Field, Input, Textarea, Checkbox } from '@/components/admin/field';
 import { PlusGlyph } from '@/components/admin/icons';
 import { getPlanOrNull } from '@/app/admin/_lib/queries';
 import { upsertWeek, deleteWeek } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 /** Shared field set for both the create and edit forms. */
 function WeekFields({ week }: { week?: PlanWeek }) {
@@ -109,18 +110,19 @@ export default async function Page({ params }: { params: Promise<{ planId: strin
         {weeks.length === 0 ? (
           <EmptyState title="No weeks yet" description="Add the first week below." />
         ) : (
-          weeks.map((week) => (
-            <CrudRow
-              key={week.id}
-              title={`Week ${week.week_index}${week.phase_label ? ' · ' + week.phase_label : ''}`}
-              subtitle={`Planned ${week.planned_km ?? '—'} km · range ${week.range_min_km ?? '?'}-${week.range_max_km ?? '?'}`}
-              deleteAction={deleteWeek.bind(null, planId, week.id)}
-              deleteConfirm={`Delete week ${week.week_index}?`}
-            >
-              <EntityForm action={upsertWeek.bind(null, planId)} submitLabel="Save week">
-                <WeekFields week={week} />
-              </EntityForm>
-            </CrudRow>
+          weeks.map((week, i) => (
+            <div key={week.id} className="sd-enter" style={staggerStyle(i)}>
+              <CrudRow
+                title={`Week ${week.week_index}${week.phase_label ? ' · ' + week.phase_label : ''}`}
+                subtitle={`Planned ${week.planned_km ?? '--'} km · range ${week.range_min_km ?? '?'}-${week.range_max_km ?? '?'}`}
+                deleteAction={deleteWeek.bind(null, planId, week.id)}
+                deleteConfirm={`Delete week ${week.week_index}?`}
+              >
+                <EntityForm action={upsertWeek.bind(null, planId)} submitLabel="Save week">
+                  <WeekFields week={week} />
+                </EntityForm>
+              </CrudRow>
+            </div>
           ))
         )}
       </div>

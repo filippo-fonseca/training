@@ -19,6 +19,7 @@ import {
   upsertAlternative,
   deleteAlternative,
 } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 const CATEGORIES = [
   ['easy_run', 'Easy run'],
@@ -136,19 +137,20 @@ export default async function DayEditorPage({
             None. Add green / yellow / red alternatives for symptom-gated days.
           </p>
         ) : (
-          alternatives.map((alt) => (
-            <CrudRow
-              key={alt.id}
-              title={<span className="capitalize">{alt.gate} gate</span>}
-              subtitle={alt.distance_km != null ? `${alt.distance_km} km` : undefined}
-              deleteAction={deleteAlternative.bind(null, planId, alt.id)}
-              deleteConfirm={`Delete the ${alt.gate} alternative?`}
-            >
-              <EntityForm action={upsertAlternative.bind(null, planId, dayId)} submitLabel="Save alternative">
-                <input type="hidden" name="id" value={alt.id} />
-                <AlternativeFields gate={alt.gate} prescription={alt.prescription} distanceKm={alt.distance_km} />
-              </EntityForm>
-            </CrudRow>
+          alternatives.map((alt, i) => (
+            <div key={alt.id} className="sd-enter" style={staggerStyle(i)}>
+              <CrudRow
+                title={<span className="capitalize">{alt.gate} gate</span>}
+                subtitle={alt.distance_km != null ? `${alt.distance_km} km` : undefined}
+                deleteAction={deleteAlternative.bind(null, planId, alt.id)}
+                deleteConfirm={`Delete the ${alt.gate} alternative?`}
+              >
+                <EntityForm action={upsertAlternative.bind(null, planId, dayId)} submitLabel="Save alternative">
+                  <input type="hidden" name="id" value={alt.id} />
+                  <AlternativeFields gate={alt.gate} prescription={alt.prescription} distanceKm={alt.distance_km} />
+                </EntityForm>
+              </CrudRow>
+            </div>
           ))
         )}
         <Collapse
