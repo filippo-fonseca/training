@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/owner';
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { upsertLog } from '@/lib/db';
+import { upsertLog, deleteLog } from '@/lib/db';
 import type { TrafficLight } from '@/lib/types/database';
 import { str, num, int, fail, OK, dbMessage, type ActionResult } from '@/app/admin/_lib/form';
 import { deriveActualPaceText } from '@/components/logging/pace';
@@ -55,4 +55,12 @@ export async function saveSessionLog(planId: string, planDayId: string, _prev: A
   }
   revalidateAfterLog();
   return OK;
+}
+
+/** Remove a mislogged day's entry entirely (owner-guarded; RLS does the real enforcement). */
+export async function deleteSessionLog(planDayId: string): Promise<void> {
+  await requireOwner();
+  const supabase = await createServerSupabaseClient();
+  await deleteLog(supabase, planDayId);
+  revalidateAfterLog();
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { requireOwner } from '@/lib/auth/owner';
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { upsertHealthEntry } from '@/lib/db';
+import { upsertHealthEntry, deleteHealthEntry } from '@/lib/db';
 import type { TrafficLight } from '@/lib/types/database';
 import { str, num, int, bool, fail, OK, dbMessage, type ActionResult } from '@/app/admin/_lib/form';
 
@@ -61,4 +61,12 @@ export async function saveHealthEntry(
   }
   revalidateHealth();
   return OK;
+}
+
+/** Remove a mislogged health checkpoint entirely (owner-guarded; RLS does the real enforcement). */
+export async function deleteHealthEntryAction(planDayId: string): Promise<void> {
+  await requireOwner();
+  const supabase = await createServerSupabaseClient();
+  await deleteHealthEntry(supabase, planDayId);
+  revalidateHealth();
 }
