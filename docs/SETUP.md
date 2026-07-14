@@ -72,7 +72,6 @@ Copy `.env.example` to `.env.local` and fill in:
 | `STRAVA_CLIENT_SECRET` | for Strava | From your Strava API application, server-only |
 | `STRAVA_REDIRECT_URI` | optional | Overrides the derived OAuth callback URL; defaults to `<origin>/api/strava/callback` |
 | `CRON_SECRET` | for cron | Bearer token the scheduled sync route checks; generate a long random string |
-| `NEXT_PUBLIC_SITE_URL` | optional | Absolute base URL of your deployment |
 
 ## 5. Strava API app setup (optional)
 
