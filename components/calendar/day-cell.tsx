@@ -49,7 +49,7 @@ export function DayCell({ cell, date, inMonth, isToday, hasMilestone }: DayCellP
   return (
     <Link
       href={`/day/${date}`}
-      aria-label={`${date} — ${primary?.title ?? 'session'}${
+      aria-label={`${date}, ${primary?.title ?? 'session'}${
         km ? `, ${km} km` : ''
       }, ${statusMeta.label}`}
       className={cn(

@@ -67,10 +67,10 @@ Once a session has been logged, `logged` is populated and `status` becomes
 
 ### Status derivation
 
-- `rest` — no plan day is scheduled for today, or today is an explicit rest day.
-- `planned` — a session is scheduled and nothing has been logged yet.
-- `logged` — a session log exists and was recorded as completed.
-- `missed` — a session log exists but was recorded as not completed.
+- `rest`: no plan day is scheduled for today, or today is an explicit rest day.
+- `planned`: a session is scheduled and nothing has been logged yet.
+- `logged`: a session log exists and was recorded as completed.
+- `missed`: a session log exists but was recorded as not completed.
 
 ## GET /api/public/status
 
@@ -99,7 +99,7 @@ origins; every other origin gets a response with no ACAO header:
 
 ## Caching
 
-`Cache-Control: public, s-maxage=60, stale-while-revalidate=300` — the CDN
+`Cache-Control: public, s-maxage=60, stale-while-revalidate=300`: the CDN
 edge may serve a cached response for up to 60 seconds, and a stale one for up
 to 5 more minutes while it revalidates in the background.
 

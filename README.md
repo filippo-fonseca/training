@@ -10,18 +10,18 @@ Read the day, log the day, watch the countdown.
 
 ## Features
 
-- **Plan engine** — phases, weeks, and days with structured targets (pace
+- **Plan engine**: phases, weeks, and days with structured targets (pace
   ranges, distances) plus the original prescription text, never lossy.
-- **Daily journey view** — "today" resolved in America/New_York, with
+- **Daily journey view**: "today" resolved in America/New_York, with
   status derivation (rest / planned / logged / missed).
-- **Session logging** — traffic-light outcomes (green / yellow / red) with
+- **Session logging**: traffic-light outcomes (green / yellow / red) with
   free-text targets carried through from the plan.
-- **Strava integration** — OAuth connect, daily cron sync, and automatic
+- **Strava integration**: OAuth connect, daily cron sync, and automatic
   same-day/same-sport matching to plan sessions, with manual link/unlink as
   a fallback.
-- **Admin console** — single-owner auth gated by an authenticated Supabase
+- **Admin console**: single-owner auth gated by an authenticated Supabase
   session, plan import, and app settings.
-- **Public widget API** — anon-level, RLS-safe JSON endpoints for an
+- **Public widget API**: anon-level, RLS-safe JSON endpoints for an
   external site widget (see [docs/API.md](docs/API.md)).
 
 ## Stack
@@ -47,10 +47,10 @@ owner account, wiring Strava, and deploying to Vercel with cron), see
 
 ## Docs
 
-- [docs/SETUP.md](docs/SETUP.md) — full setup guide, from a fresh Supabase
+- [docs/SETUP.md](docs/SETUP.md): full setup guide, from a fresh Supabase
   project to a deployed instance.
-- [docs/API.md](docs/API.md) — the public widget API (read-only, anon-safe).
-- [docs/strava.md](docs/strava.md) — Strava integration details: OAuth flow,
+- [docs/API.md](docs/API.md): the public widget API (read-only, anon-safe).
+- [docs/strava.md](docs/strava.md): Strava integration details: OAuth flow,
   sync watermark, and matching rules.
 
 ## Security model
@@ -64,4 +64,4 @@ no user session to authenticate with.
 
 ## License
 
-[MIT](LICENSE) — see the LICENSE file.
+[MIT](LICENSE): see the LICENSE file.
