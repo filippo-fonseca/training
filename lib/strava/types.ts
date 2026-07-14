@@ -24,6 +24,15 @@ export interface StravaAthlete {
   [key: string]: unknown;
 }
 
+/**
+ * A photo attached to an activity. `urls` maps a size (px string) to a URL,
+ * e.g. `{ "100": "...", "600": "..." }`. The list endpoint usually omits photo
+ * URLs; the detail endpoint (GET /activities/{id}) returns `photos.primary`.
+ */
+export interface StravaPhoto {
+  urls?: Record<string, string> | null;
+}
+
 /** A summary activity from GET /athlete/activities. */
 export interface StravaSummaryActivity {
   id: number;
@@ -43,5 +52,24 @@ export interface StravaSummaryActivity {
   max_heartrate?: number;
   total_elevation_gain?: number;
   map?: { summary_polyline?: string | null } | null;
+  /** Present on the detail endpoint; occasionally on summaries. */
+  photos?: { primary?: StravaPhoto | null; count?: number } | null;
   [key: string]: unknown;
+}
+
+/** The detail activity from GET /activities/{id}. Superset of the summary; we
+ *  fetch it only to obtain the primary photo when linking (rate-limit aware). */
+export type StravaDetailActivity = StravaSummaryActivity;
+
+/**
+ * Best (largest) primary photo URL for an activity, or null when it has none.
+ * Strava keys `photos.primary.urls` by pixel size as strings; pick the largest.
+ */
+export function primaryPhotoUrl(activity: StravaSummaryActivity): string | null {
+  const urls = activity.photos?.primary?.urls;
+  if (!urls) return null;
+  const entries = Object.entries(urls).filter(([, url]) => typeof url === 'string' && url.length > 0);
+  if (entries.length === 0) return null;
+  entries.sort((a, b) => (Number.parseInt(b[0], 10) || 0) - (Number.parseInt(a[0], 10) || 0));
+  return entries[0][1];
 }

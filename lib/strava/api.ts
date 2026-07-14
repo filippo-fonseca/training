@@ -2,7 +2,7 @@
 // paged defensively and best-effort rate-limit aware.
 
 import { STRAVA_API_BASE } from './config';
-import type { StravaSummaryActivity } from './types';
+import type { StravaSummaryActivity, StravaDetailActivity } from './types';
 
 export class StravaApiError extends Error {
   constructor(
@@ -64,4 +64,30 @@ export async function listActivities(
   }
 
   return all;
+}
+
+/**
+ * GET /activities/{id} — the detail activity, which includes `photos.primary`.
+ * Used ONLY when linking an activity to a session (so we spend a detail request
+ * per linked activity, not per synced activity) to respect Strava's rate limits.
+ * See docs/strava.md. Returns null on 404 (deleted/private activity).
+ */
+export async function getActivity(
+  accessToken: string,
+  stravaId: number,
+): Promise<StravaDetailActivity | null> {
+  const res = await fetch(
+    `${STRAVA_API_BASE}/activities/${stravaId}?include_all_efforts=false`,
+    { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' },
+  );
+  if (res.status === 404) return null;
+  if (res.status === 429) throw new StravaApiError('Strava rate limit hit (429)', 429);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new StravaApiError(
+      `Strava activity ${stravaId} returned ${res.status}: ${body.slice(0, 200)}`,
+      res.status,
+    );
+  }
+  return (await res.json()) as StravaDetailActivity;
 }

@@ -6,11 +6,13 @@ import type { TypedSupabaseClient } from '@/lib/db/client';
 import type { Json, StravaActivity } from '@/lib/types/database';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
 import { getStravaConfig } from './config';
-import { listActivities } from './api';
+import { listActivities, getActivity } from './api';
 import {
   ensureAccessToken,
+  getActivityById,
   getConnection,
   latestActivityStart,
+  setActivityPhotoByStravaId,
   setActivityPlanDay,
   upsertActivities,
   type StravaActivityInsert,
@@ -23,7 +25,7 @@ import {
   type MatchableDay,
   type SportFamily,
 } from './match';
-import type { StravaSummaryActivity } from './types';
+import { primaryPhotoUrl, type StravaSummaryActivity } from './types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FIRST_SYNC_WINDOW_MS = 60 * DAY_MS;
@@ -52,6 +54,10 @@ function toInsert(a: StravaSummaryActivity): StravaActivityInsert {
     max_heartrate: a.max_heartrate ?? null,
     total_elevation_gain: a.total_elevation_gain ?? null,
     map_polyline: a.map?.summary_polyline ?? null,
+    // photo_url is deliberately NOT set here: the upsert replaces the row on
+    // re-sync, and the list endpoint usually omits photos, so writing null would
+    // clobber a photo backfilled at link time. Summaries that DO carry a photo
+    // are captured by a targeted, non-clobbering update below.
     raw: a as unknown as Json,
   };
 }
@@ -140,6 +146,20 @@ export async function runStravaSync(client: TypedSupabaseClient): Promise<SyncRe
   const rows = activities.map(toInsert);
   await upsertActivities(client, rows);
 
+  // Capture any photo that DID come back on the summary (rare; the list endpoint
+  // usually omits them). Non-clobbering update, so it never nulls a photo that
+  // was backfilled at link time. The detail fetch on link fills the rest.
+  for (const a of activities) {
+    const url = primaryPhotoUrl(a);
+    if (url) {
+      try {
+        await setActivityPhotoByStravaId(client, a.id, url);
+      } catch {
+        // A photo is nice-to-have; never fail a sync over one.
+      }
+    }
+  }
+
   // Auto-match: consider every activity still lacking a plan day (newly synced
   // plus any previously-unmatched), so re-running fills gaps as the plan grows.
   const { planId, days } = await loadMatchableDays(client);
@@ -173,6 +193,39 @@ export async function runStravaSync(client: TypedSupabaseClient): Promise<SyncRe
     upserted: rows.length,
     matched: matchedCount,
   };
+}
+
+/**
+ * Fetch a linked activity's detail once to backfill its primary photo, if it
+ * does not already have one. Called when the owner links an activity to a
+ * session, so a detail request is spent per LINKED activity (not per synced
+ * one) to respect Strava's rate limits (see docs/strava.md). Best-effort: any
+ * failure (not connected, rate limited, no photo, deleted activity) is swallowed
+ * so linking never fails over a missing photo. Returns the resolved photo URL,
+ * or null when none could be captured.
+ */
+export async function backfillActivityPhoto(
+  client: TypedSupabaseClient,
+  activityRowId: string,
+): Promise<string | null> {
+  try {
+    const activity = await getActivityById(client, activityRowId);
+    if (!activity) return null;
+    if (activity.photo_url) return activity.photo_url; // already have one
+    const config = getStravaConfig();
+    if (!config) return null;
+    const connection = await getConnection(client);
+    if (!connection) return null;
+    const accessToken = await ensureAccessToken(client, config, connection);
+    const detail = await getActivity(accessToken, activity.strava_id);
+    if (!detail) return null;
+    const url = primaryPhotoUrl(detail);
+    if (!url) return null;
+    await setActivityPhotoByStravaId(client, activity.strava_id, url);
+    return url;
+  } catch {
+    return null;
+  }
 }
 
 /** Convenience: current activities count and connection presence for the UI. */
