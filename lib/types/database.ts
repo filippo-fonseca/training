@@ -665,6 +665,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      bootstrap_admin_email: {
+        Args: { claimed_email: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       session_slot: SessionSlot;
