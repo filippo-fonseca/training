@@ -2,7 +2,7 @@
 // km, cumulative series, phase bands, and progress summary via the anon lib/db
 // helpers. If the hosted database is unreachable or its env is missing (e.g. the
 // build lane), it falls back to a static fixture derived from supabase/seed.sql
-// with zero logs — which is also the genuine current state (the plan starts
+// with zero logs, which is also the genuine current state (the plan starts
 // 2026-07-13 and no sessions are logged yet), satisfying the empty-data criterion.
 
 import {

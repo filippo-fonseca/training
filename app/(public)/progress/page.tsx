@@ -76,7 +76,7 @@ export default async function ProgressPage() {
             </p>
           </header>
 
-          {/* Completion-rate stat strip — no card chrome, over the glow */}
+          {/* Completion-rate stat strip: no card chrome, over the glow */}
           <section
             className="sd-enter grid grid-cols-2 gap-6 sm:grid-cols-4"
             style={staggerStyle(1)}
@@ -150,7 +150,7 @@ export default async function ProgressPage() {
             <p className="max-w-xl text-xs text-sd-ink-faint">
               {anyLogged
                 ? "Actual km reflect logged sessions; weeks past the last log stay as planned projections."
-                : "No sessions logged yet — every bar is a planned projection. Actual km will fill in from the accent baseline as the build gets underway."}
+                : "No sessions logged yet. Every bar is a planned projection; actual km will fill in from the accent baseline as the build gets underway."}
             </p>
             <StatusPill
               tone={fromFixture ? "idle" : "synced"}
