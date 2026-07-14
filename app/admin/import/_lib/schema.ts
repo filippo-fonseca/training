@@ -63,6 +63,11 @@ export interface ImportDay {
 export interface ImportPhase {
   phase_index: number;
   name: string;
+  // Date window that defines the phase (migration 0008). Weeks match in by date
+  // containment. start_week/end_week are accepted for back-compat but no longer
+  // drive membership.
+  start_date: string | null;
+  end_date: string | null;
   start_week: number | null;
   end_week: number | null;
   description: string | null;
@@ -160,6 +165,8 @@ export interface ImportCounts {
 export interface ValidationResult {
   ok: boolean;
   errors: string[];
+  /** Non-blocking notices: accepted-but-ignored legacy fields, etc. */
+  warnings: string[];
   value?: ImportDocument;
   slug?: string;
   title?: string;
@@ -174,8 +181,12 @@ const SLUG_RE = /^[a-z0-9-]+$/;
 
 class Ctx {
   errors: string[] = [];
+  warnings: string[] = [];
   err(path: string, msg: string) {
     this.errors.push(`${path}: ${msg}`);
+  }
+  warn(msg: string) {
+    this.warnings.push(msg);
   }
   reqStr(o: Rec, key: string, path: string): string {
     const v = o[key];
@@ -265,10 +276,14 @@ export function validateImport(raw: string): ValidationResult {
   try {
     parsed = JSON.parse(raw);
   } catch (e) {
-    return { ok: false, errors: [`Invalid JSON: ${e instanceof Error ? e.message : 'parse error'}`] };
+    return {
+      ok: false,
+      errors: [`Invalid JSON: ${e instanceof Error ? e.message : 'parse error'}`],
+      warnings: [],
+    };
   }
   if (!isObj(parsed)) {
-    return { ok: false, errors: ['Top level must be a JSON object.'] };
+    return { ok: false, errors: ['Top level must be a JSON object.'], warnings: [] };
   }
 
   const c = new Ctx();
@@ -318,14 +333,29 @@ export function validateImport(raw: string): ValidationResult {
     const path = `phases[${i}]`;
     if (!isObj(raw)) {
       c.err(path, 'must be an object');
-      return { phase_index: -1, name: '', start_week: null, end_week: null, description: null };
+      return {
+        phase_index: -1,
+        name: '',
+        start_date: null,
+        end_date: null,
+        start_week: null,
+        end_week: null,
+        description: null,
+      };
     }
     const phase_index = c.reqInt(raw, 'phase_index', path);
     if (phaseIndices.has(phase_index)) c.err(`${path}.phase_index`, `duplicate phase_index ${phase_index}`);
     phaseIndices.add(phase_index);
+    const start_date = c.optDate(raw, 'start_date', path);
+    const end_date = c.optDate(raw, 'end_date', path);
+    if (start_date && end_date && end_date < start_date) {
+      c.err(`${path}.end_date`, 'must be on or after start_date');
+    }
     return {
       phase_index,
       name: c.reqStr(raw, 'name', path),
+      start_date,
+      end_date,
       start_week: c.optInt(raw, 'start_week', path),
       end_week: c.optInt(raw, 'end_week', path),
       description: c.optStr(raw, 'description', path),
@@ -334,6 +364,7 @@ export function validateImport(raw: string): ValidationResult {
 
   // ---- weeks ----
   const weekIndices = new Set<number>();
+  let legacyPhaseRefs = 0;
   const weeks: ImportWeek[] = c.array(parsed, 'weeks', 'root').map((raw, i) => {
     const path = `weeks[${i}]`;
     if (!isObj(raw)) {
@@ -344,10 +375,10 @@ export function validateImport(raw: string): ValidationResult {
     const week_index = c.reqInt(o, 'week_index', path);
     if (weekIndices.has(week_index)) c.err(`${path}.week_index`, `duplicate week_index ${week_index}`);
     weekIndices.add(week_index);
+    // A per-week phase reference is accepted but IGNORED: phase membership is
+    // derived from phase date ranges now (migration 0008), never a stored link.
     const phase_index = c.optInt(o, 'phase_index', path);
-    if (phase_index !== null && !phaseIndices.has(phase_index)) {
-      c.err(`${path}.phase_index`, `references unknown phase_index ${phase_index}`);
-    }
+    if (phase_index !== null) legacyPhaseRefs += 1;
     return {
       week_index,
       phase_index,
@@ -370,6 +401,12 @@ export function validateImport(raw: string): ValidationResult {
       is_peak: c.bool(o, 'is_peak'),
     };
   });
+
+  if (legacyPhaseRefs > 0) {
+    c.warn(
+      `weeks[].phase_index is set on ${legacyPhaseRefs} week(s) but ignored: phase assignment is now derived from phase date ranges (start_date/end_date).`,
+    );
+  }
 
   // ---- days (+ sessions, alternatives) ----
   const dayIndices = new Set<number>();
@@ -511,7 +548,11 @@ export function validateImport(raw: string): ValidationResult {
   });
 
   if (c.errors.length > 0 || !plan) {
-    return { ok: false, errors: c.errors.length ? c.errors : ['plan is required'] };
+    return {
+      ok: false,
+      errors: c.errors.length ? c.errors : ['plan is required'],
+      warnings: c.warnings,
+    };
   }
 
   const value: ImportDocument = {
@@ -532,5 +573,5 @@ export function validateImport(raw: string): ValidationResult {
     milestones: milestones.length,
     checkpoints: checkpoints.length,
   };
-  return { ok: true, errors: [], value, slug: plan.slug, title: plan.title, counts };
+  return { ok: true, errors: [], warnings: c.warnings, value, slug: plan.slug, title: plan.title, counts };
 }

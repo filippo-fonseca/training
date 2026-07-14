@@ -29,15 +29,14 @@
     {
       "phase_index": 1,
       "name": "Aerobic base",
-      "start_week": 1,
-      "end_week": 1,
+      "start_date": "2026-01-05",
+      "end_date": "2026-01-11",
       "description": "Easy volume with one controlled quality session."
     }
   ],
   "weeks": [
     {
       "week_index": 1,
-      "phase_index": 1,
       "phase_label": "Aerobic base",
       "planned_km": 32.0,
       "range_min_km": 28.0,

@@ -31,6 +31,29 @@ function CountGrid({ counts }: { counts: ImportCounts }) {
   );
 }
 
+function WarningList({ warnings }: { warnings: string[] }) {
+  if (warnings.length === 0) return null;
+  return (
+    <div
+      className="rounded-sd-chrome border px-4 py-3"
+      style={{
+        color: 'var(--ink-amber)',
+        background: 'color-mix(in srgb, var(--ink-amber) 10%, var(--sd-box))',
+        borderColor: 'color-mix(in srgb, var(--ink-amber) 30%, var(--sd-line))',
+      }}
+    >
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider">
+        {warnings.length} notice{warnings.length === 1 ? '' : 's'}
+      </p>
+      <ul className="space-y-1 text-xs text-sd-ink-dull">
+        {warnings.map((w, i) => (
+          <li key={i}>{w}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ErrorList({ errors }: { errors: string[] }) {
   return (
     <div
@@ -132,6 +155,8 @@ export function ImportWorkbench() {
       </Panel>
 
       {preview && !preview.ok ? <ErrorList errors={preview.errors} /> : null}
+
+      {preview ? <WarningList warnings={preview.warnings} /> : null}
 
       {preview && preview.ok && preview.counts ? (
         <Panel className="p-5">

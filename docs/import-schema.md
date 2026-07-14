@@ -13,11 +13,19 @@ one), and only written when you confirm. A working example lives at
 
 The JSON never contains database UUIDs. Instead:
 
-- `weeks[].phase_index` points at a `phases[].phase_index`.
 - `days[].week_index` points at a `weeks[].week_index`.
 
-On apply, those indices are resolved to the real foreign keys. Every index used
-by a child must exist among its parents, or validation fails.
+On apply, that index is resolved to the real foreign key. Every `week_index` used
+by a day must exist among the weeks, or validation fails.
+
+## How weeks join phases
+
+Weeks are not linked to phases by hand. A phase carries a date window
+(`start_date`, `end_date`) and a week joins the phase whose window contains the
+week's `start_date`, exactly as a day matches into its week. If windows overlap,
+the phase with the later `start_date` wins (the most specific block); a week
+inside no window belongs to no phase. A legacy `weeks[].phase_index` is still
+accepted, but it is ignored (with a validator notice) rather than applied.
 
 ## Create vs replace
 
@@ -81,15 +89,19 @@ The root record. `slug` and `title` are required; everything else is optional.
 
 ## phases[]
 
-Training blocks spanning one or more weeks.
+Date-ranged training blocks. A phase's `start_date`/`end_date` window is what
+groups weeks into it (by date containment); `start_week`/`end_week` are accepted
+for back-compat but no longer drive membership.
 
-| Field         | Type    | Required | Notes                          |
-| ------------- | ------- | -------- | ------------------------------ |
-| `phase_index` | integer | yes      | Unique within the file.        |
-| `name`        | string  | yes      |                                |
-| `start_week`  | integer | no       |                                |
-| `end_week`    | integer | no       |                                |
-| `description` | string  | no       |                                |
+| Field         | Type    | Required | Notes                                             |
+| ------------- | ------- | -------- | ------------------------------------------------- |
+| `phase_index` | integer | yes      | Unique within the file.                           |
+| `name`        | string  | yes      |                                                   |
+| `start_date`  | date    | no       | Window start (YYYY-MM-DD). Weeks match by this.   |
+| `end_date`    | date    | no       | Window end. Must be on or after `start_date`.     |
+| `start_week`  | integer | no       | Legacy; accepted but not used for membership.     |
+| `end_week`    | integer | no       | Legacy; accepted but not used for membership.     |
+| `description` | string  | no       |                                                   |
 
 ## weeks[]
 
@@ -98,8 +110,8 @@ One row per plan week.
 | Field                | Type    | Required | Notes                                          |
 | -------------------- | ------- | -------- | ---------------------------------------------- |
 | `week_index`         | integer | yes      | Unique within the file.                        |
-| `phase_index`        | integer | no       | Must match a `phases[].phase_index` if present.|
-| `phase_label`        | string  | no       | Per-week phase label.                          |
+| `phase_index`        | integer | no       | Legacy; accepted but ignored (membership is derived from phase dates). |
+| `phase_label`        | string  | no       | Per-week phase label (free text, still used).  |
 | `planned_km`         | number  | no       | Ceiling, not a floor to chase.                 |
 | `range_min_km`       | number  | no       | Acceptable range lower bound.                  |
 | `range_max_km`       | number  | no       | Acceptable range upper bound.                  |
@@ -211,8 +223,10 @@ The formal traffic-light decision points (for example after weeks 3, 7, 9, 12).
   is required.
 - `phase_index`, `week_index`, `day_index`, `date`, `milestone_index`, and
   `checkpoint_index` must each be unique within their array.
-- Every `weeks[].phase_index` must match a phase; every `days[].week_index` must
-  match a week.
+- A phase's `end_date` must be on or after its `start_date`.
+- Every `days[].week_index` must match a week. A `weeks[].phase_index`, if
+  present, is accepted but ignored (a notice is shown): phase membership is
+  derived from phase date ranges, not a stored per-week link.
 - A day may have at most one `primary` and one `secondary` session, and at most
   one alternative per gate.
 - Enum fields (`slot`, `category`, `gate`, milestone `type`) must be one of the

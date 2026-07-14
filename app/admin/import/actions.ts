@@ -10,6 +10,8 @@ import { validateImport, type ImportCounts } from '@/app/admin/import/_lib/schem
 export interface PreviewResult {
   ok: boolean;
   errors: string[];
+  /** Non-blocking notices (e.g. ignored legacy per-week phase references). */
+  warnings: string[];
   slug?: string;
   title?: string;
   counts?: ImportCounts;
@@ -31,7 +33,7 @@ export async function previewImport(raw: string): Promise<PreviewResult> {
   await requireOwner();
   const result = validateImport(raw);
   if (!result.ok || !result.value) {
-    return { ok: false, errors: result.errors };
+    return { ok: false, errors: result.errors, warnings: result.warnings };
   }
 
   const supabase = await createServerSupabaseClient();
@@ -41,12 +43,13 @@ export async function previewImport(raw: string): Promise<PreviewResult> {
     .eq('slug', result.slug as string)
     .maybeSingle();
   if (error) {
-    return { ok: false, errors: [dbMessage('Preview', error.message)] };
+    return { ok: false, errors: [dbMessage('Preview', error.message)], warnings: result.warnings };
   }
 
   return {
     ok: true,
     errors: [],
+    warnings: result.warnings,
     slug: result.slug,
     title: result.title,
     counts: result.counts,
@@ -103,18 +106,16 @@ export async function applyImport(raw: string): Promise<ApplyResult> {
       if (error) throw new Error(dbMessage('Insert private notes', error.message));
     }
 
-    // Phases -> id map by phase_index
-    const phaseIdByIndex = new Map<number, string>();
+    // Phases carry their own date window (start_date/end_date); weeks match into
+    // them by date containment at read time, so there is no phase_id to resolve.
     if (doc.phases.length > 0) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('plan_phases')
-        .insert(doc.phases.map((p) => ({ plan_id: planId, ...p })))
-        .select('id, phase_index');
+        .insert(doc.phases.map((p) => ({ plan_id: planId, ...p })));
       if (error) throw new Error(dbMessage('Insert phases', error.message));
-      for (const r of data ?? []) phaseIdByIndex.set(r.phase_index, r.id);
     }
 
-    // Weeks -> id map by week_index (resolve phase_id)
+    // Weeks -> id map by week_index
     const weekIdByIndex = new Map<number, string>();
     if (doc.weeks.length > 0) {
       // phase_index on a week is ignored: phase membership is derived from
