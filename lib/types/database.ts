@@ -132,6 +132,12 @@ export interface Database {
           plan_id: string;
           phase_index: number;
           name: string;
+          // Date window that defines the phase (migration 0008). Weeks match in
+          // by date containment (lib/derive/phase-membership.ts); nullable, and a
+          // null-dated phase matches no weeks. start_week/end_week are inert
+          // legacy columns kept by the migration; nothing reads them.
+          start_date: string | null;
+          end_date: string | null;
           start_week: number | null;
           end_week: number | null;
           description: string | null;
@@ -143,6 +149,8 @@ export interface Database {
           plan_id: string;
           phase_index: number;
           name: string;
+          start_date?: string | null;
+          end_date?: string | null;
           start_week?: number | null;
           end_week?: number | null;
           description?: string | null;
@@ -163,7 +171,6 @@ export interface Database {
         Row: {
           id: string;
           plan_id: string;
-          phase_id: string | null;
           week_index: number;
           start_date: string | null;
           end_date: string | null;
@@ -190,7 +197,6 @@ export interface Database {
         Insert: {
           id?: string;
           plan_id: string;
-          phase_id?: string | null;
           week_index: number;
           start_date?: string | null;
           end_date?: string | null;
@@ -220,12 +226,6 @@ export interface Database {
             foreignKeyName: 'plan_weeks_plan_id_fkey';
             columns: ['plan_id'];
             referencedRelation: 'plans';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'plan_weeks_phase_id_fkey';
-            columns: ['phase_id'];
-            referencedRelation: 'plan_phases';
             referencedColumns: ['id'];
           },
         ];

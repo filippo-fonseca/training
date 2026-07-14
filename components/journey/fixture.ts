@@ -52,6 +52,15 @@ const plan: Plan = {
   updated_at: TS,
 };
 
+/** Week start dates are 7-day steps from the plan start (Mon 2026-07-13). */
+function weekDates(index: number): [string, string] {
+  const base = Date.UTC(2026, 6, 13); // 2026-07-13
+  const start = base + (index - 1) * 7 * 86_400_000;
+  const end = start + 6 * 86_400_000;
+  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  return [iso(start), iso(end)];
+}
+
 const PHASE_ROWS: Array<[string, number, number]> = [
   ["Return to normal running", 1, 3],
   ["Durability and economy", 4, 4],
@@ -65,26 +74,22 @@ const PHASE_ROWS: Array<[string, number, number]> = [
   ["Taper", 13, 13],
   ["Race week", 14, 14],
 ];
-const phases: PlanPhase[] = PHASE_ROWS.map(([name, start, end], i) => ({
+// Phases are date-ranged (migration 0008): the window spans the first member
+// week's start_date to the last member week's end_date, so the journey model's
+// date-containment helper places each week identically to the seed.
+const phases: PlanPhase[] = PHASE_ROWS.map(([name, startWeek, endWeek], i) => ({
   id: `fixture-phase-${i + 1}`,
   plan_id: PLAN_ID,
   phase_index: i + 1,
   name,
-  start_week: start,
-  end_week: end,
+  start_date: weekDates(startWeek)[0],
+  end_date: weekDates(endWeek)[1],
+  start_week: startWeek,
+  end_week: endWeek,
   description: null,
   created_at: TS,
   updated_at: TS,
 }));
-
-/** Week start dates are 7-day steps from the plan start (Mon 2026-07-13). */
-function weekDates(index: number): [string, string] {
-  const base = Date.UTC(2026, 6, 13); // 2026-07-13
-  const start = base + (index - 1) * 7 * 86_400_000;
-  const end = start + 6 * 86_400_000;
-  const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-  return [iso(start), iso(end)];
-}
 
 const PLANNED_KM = [16, 20, 25, 30, 35, 31, 40, 45, 41, 54, 57, 58, 43, 34.1];
 const LONG_RUN_KM = [5.2, 7, 8, 10, 12, 9, 14, 16, 13, 21.1, 18, 20, 14, 21.1];
@@ -110,7 +115,6 @@ function mkWeek(index: number, overrides: Partial<PlanWeek> = {}): PlanWeek {
   return {
     id: index === 1 ? WEEK1_ID : `fixture-week-${index}`,
     plan_id: PLAN_ID,
-    phase_id: null,
     week_index: index,
     start_date,
     end_date,

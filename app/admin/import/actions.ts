@@ -117,9 +117,10 @@ export async function applyImport(raw: string): Promise<ApplyResult> {
     // Weeks -> id map by week_index (resolve phase_id)
     const weekIdByIndex = new Map<number, string>();
     if (doc.weeks.length > 0) {
-      const rows = doc.weeks.map(({ phase_index, ...rest }) => ({
+      // phase_index on a week is ignored: phase membership is derived from
+      // dates now (migration 0008), never from a stored per-week link.
+      const rows = doc.weeks.map(({ phase_index: _ignored, ...rest }) => ({
         plan_id: planId,
-        phase_id: phase_index != null ? phaseIdByIndex.get(phase_index) ?? null : null,
         ...rest,
       }));
       const { data, error } = await supabase.from('plan_weeks').insert(rows).select('id, week_index');

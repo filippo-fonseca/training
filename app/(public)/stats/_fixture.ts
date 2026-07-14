@@ -73,7 +73,6 @@ export const FIXTURE_WEEKS: PlanWeek[] = WEEK_STARTS.map((start, i) => {
   return {
     id: `wk-${weekIndex}`,
     plan_id: PLAN_ID,
-    phase_id: null,
     week_index: weekIndex,
     start_date: start,
     end_date: WEEK_ENDS[i],

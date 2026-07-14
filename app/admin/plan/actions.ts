@@ -146,7 +146,6 @@ export async function upsertWeek(planId: string, _prev: ActionResult, fd: FormDa
   const payload = {
     plan_id: planId,
     week_index: weekIndex,
-    phase_id: str(fd, 'phase_id'),
     start_date: str(fd, 'start_date'),
     end_date: str(fd, 'end_date'),
     phase_label: str(fd, 'phase_label'),
