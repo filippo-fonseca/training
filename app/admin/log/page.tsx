@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { Panel } from '@/components/ui/panel';
 import { EntityForm } from '@/components/admin/entity-form';
 import { EmptyState } from '@/components/admin/data-table';
+import { DeleteButton } from '@/components/admin/delete-button';
 import { SessionLogFields } from '@/components/logging/session-log-fields';
 import { WeekNav } from '@/components/logging/week-nav';
 import { todayInNewYork } from '@/components/calendar/date-utils';
@@ -13,7 +14,7 @@ import {
   type LogDayRow,
 } from '@/app/admin/_lib/queries';
 import { formatDate, formatKm } from '@/app/admin/_lib/format';
-import { saveSessionLog } from '@/app/admin/log/actions';
+import { saveSessionLog, deleteSessionLog } from '@/app/admin/log/actions';
 
 interface PageProps {
   searchParams: Promise<{ week?: string }>;
@@ -92,7 +93,16 @@ function DayLogRow({ planId, row, isToday }: { planId: string; row: LogDayRow; i
             {primary?.title ?? 'No session'} · {formatKm(primary?.distance_km ?? day.planned_run_km)}
           </div>
         </div>
-        <span className="shrink-0 text-xs text-sd-ink-faint">{summary}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs text-sd-ink-faint">{summary}</span>
+          {log ? (
+            <DeleteButton
+              action={deleteSessionLog.bind(null, day.id)}
+              confirm={`Delete the log for ${formatDate(day.date)}? This cannot be undone.`}
+              compact
+            />
+          ) : null}
+        </div>
       </div>
       <details open={isToday || !!log} className="group border-t border-sd-divider">
         <summary className="cursor-pointer list-none px-4 py-2 text-tiny font-semibold uppercase tracking-wider text-sd-ink-faint transition-colors hover:text-sd-ink-dull [&::-webkit-details-marker]:hidden">

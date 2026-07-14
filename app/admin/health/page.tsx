@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/admin/page-header';
 import { Panel } from '@/components/ui/panel';
 import { EntityForm } from '@/components/admin/entity-form';
 import { EmptyState } from '@/components/admin/data-table';
+import { DeleteButton } from '@/components/admin/delete-button';
 import { HealthEntryFields } from '@/components/logging/health-entry-fields';
 import { WeekNav } from '@/components/logging/week-nav';
 import { todayInNewYork } from '@/components/calendar/date-utils';
@@ -13,7 +14,7 @@ import {
   type HealthDayRow,
 } from '@/app/admin/_lib/queries';
 import { formatDate } from '@/app/admin/_lib/format';
-import { saveHealthEntry } from '@/app/admin/health/actions';
+import { saveHealthEntry, deleteHealthEntryAction } from '@/app/admin/health/actions';
 
 interface PageProps {
   searchParams: Promise<{ week?: string }>;
@@ -93,6 +94,15 @@ function DayHealthRow({ planId, row, isToday }: { planId: string; row: HealthDay
           </div>
           <div className="truncate text-xs text-sd-ink-faint">{entry ? 'Checkpoint recorded' : 'Not recorded'}</div>
         </div>
+        {entry ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <DeleteButton
+              action={deleteHealthEntryAction.bind(null, day.id)}
+              confirm={`Delete the health checkpoint for ${formatDate(day.date)}? This cannot be undone.`}
+              compact
+            />
+          </div>
+        ) : null}
       </div>
       <details open={isToday || !!entry} className="group border-t border-sd-divider">
         <summary className="cursor-pointer list-none px-4 py-2 text-tiny font-semibold uppercase tracking-wider text-sd-ink-faint transition-colors hover:text-sd-ink-dull [&::-webkit-details-marker]:hidden">
