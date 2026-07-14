@@ -80,7 +80,9 @@ export async function saveConnection(
 
 /** Delete the connection (unlink). Activities are kept. */
 export async function deleteConnection(client: TypedSupabaseClient): Promise<void> {
-  const { error } = await client.from('strava_connections').delete().neq('id', '');
+  // `id` is a non-null uuid, so `id is not null` matches every row while still
+  // giving PostgREST the required filter (a bare delete is rejected).
+  const { error } = await client.from('strava_connections').delete().not('id', 'is', null);
   if (error) throw new StravaDbError('deleteConnection', error);
 }
 

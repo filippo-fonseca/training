@@ -21,6 +21,7 @@ import {
   stravaSportFamily,
   type MatchableActivity,
   type MatchableDay,
+  type SportFamily,
 } from './match';
 import type { StravaSummaryActivity } from './types';
 
@@ -85,11 +86,28 @@ async function loadMatchableDays(
     catsByDay.set(s.plan_day_id, list);
   }
 
-  const days: MatchableDay[] = dayRows.map((d) => ({
-    planDayId: d.id,
-    date: d.date,
-    families: dayFamilies(catsByDay.get(d.id) ?? [], d.planned_run_km),
-  }));
+  // Families already occupied by a previously-matched activity on that day: drop
+  // them so a fresh sync never double-links a second run/ride onto the same day.
+  const { data: takenRows } = await client
+    .from('strava_activities')
+    .select('plan_day_id, sport_type')
+    .in('plan_day_id', dayIds)
+    .not('plan_day_id', 'is', null);
+  const takenByDay = new Map<string, Set<SportFamily>>();
+  for (const t of takenRows ?? []) {
+    if (!t.plan_day_id) continue;
+    const fam = stravaSportFamily(t.sport_type);
+    if (fam === 'other') continue;
+    const set = takenByDay.get(t.plan_day_id) ?? new Set<SportFamily>();
+    set.add(fam);
+    takenByDay.set(t.plan_day_id, set);
+  }
+
+  const days: MatchableDay[] = dayRows.map((d) => {
+    const families = dayFamilies(catsByDay.get(d.id) ?? [], d.planned_run_km);
+    for (const fam of takenByDay.get(d.id) ?? []) families.delete(fam);
+    return { planDayId: d.id, date: d.date, families };
+  });
   return { planId: plan.id, days };
 }
 
