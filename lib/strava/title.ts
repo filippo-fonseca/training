@@ -66,6 +66,12 @@ function add(source: string, activity: Activity, tod: Tod): void {
 // / "à tarde" / "ao entardecer" phrases are gender-invariant; only "noturno/a"
 // inflects. Required examples: "Corrida matinal", "Corrida na hora do almoço",
 // "Corrida à tarde", "Corrida ao entardecer", "Corrida noturna".
+//
+// pt-BR emits a different daypart family: prepositional "<Noun> da manhã /
+// da tarde / da noite" (plus "à noite" for night), which are gender-invariant
+// and map to the same English defaults as the pt-PT forms above. Live evidence:
+// "Corrida da tarde", "Pedalada da tarde". Evening ("ao entardecer") already
+// has full coverage above, so pt-BR adds only morning / afternoon / night.
 // ---------------------------------------------------------------------------
 {
   const feminine: Array<[string, Activity]> = [
@@ -81,6 +87,11 @@ function add(source: string, activity: Activity, tod: Tod): void {
     add(`${noun} à tarde`, activity, 'afternoon');
     add(`${noun} ao entardecer`, activity, 'evening');
     add(`${noun} noturna`, activity, 'night');
+    // pt-BR prepositional dayparts (gender-invariant).
+    add(`${noun} da manhã`, activity, 'morning');
+    add(`${noun} da tarde`, activity, 'afternoon');
+    add(`${noun} da noite`, activity, 'night');
+    add(`${noun} à noite`, activity, 'night');
   }
   // "Treino" (Workout) is masculine: night form is "noturno".
   add('Treino matinal', 'Workout', 'morning');
@@ -88,6 +99,11 @@ function add(source: string, activity: Activity, tod: Tod): void {
   add('Treino à tarde', 'Workout', 'afternoon');
   add('Treino ao entardecer', 'Workout', 'evening');
   add('Treino noturno', 'Workout', 'night');
+  // pt-BR prepositional dayparts (gender-invariant).
+  add('Treino da manhã', 'Workout', 'morning');
+  add('Treino da tarde', 'Workout', 'afternoon');
+  add('Treino da noite', 'Workout', 'night');
+  add('Treino à noite', 'Workout', 'night');
 }
 
 // ---------------------------------------------------------------------------

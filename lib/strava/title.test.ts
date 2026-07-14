@@ -13,6 +13,16 @@ test('pt: Corrida time-of-day defaults translate to English Run defaults', () =>
   assert.equal(englishTitle('Corrida noturna'), 'Night Run');
 });
 
+// --- pt-BR prepositional daypart variants (DEF-TITLE-1) ------------------------
+test('pt-BR: "da <daypart>" / "à noite" defaults translate to English', () => {
+  assert.equal(englishTitle('Corrida da tarde'), 'Afternoon Run');
+  assert.equal(englishTitle('Pedalada da tarde'), 'Afternoon Ride');
+  assert.equal(englishTitle('Corrida da manhã'), 'Morning Run');
+  assert.equal(englishTitle('Treino da noite'), 'Night Workout');
+  // "da madrugada" (pre-dawn) is not a Strava default: pass through verbatim.
+  assert.equal(englishTitle('Corrida da madrugada'), 'Corrida da madrugada');
+});
+
 // --- Other required locale Run examples ----------------------------------------
 test('es: Carrera por la mañana -> Morning Run', () => {
   assert.equal(englishTitle('Carrera por la mañana'), 'Morning Run');
