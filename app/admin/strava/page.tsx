@@ -11,6 +11,7 @@ import { getConnection, getActivities, isStravaConfigured } from '@/lib/strava';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
 import { linkActivity, unlinkActivity, disconnect } from './actions';
 import { SyncNowButton } from './_components/sync-now';
+import { AutoLinkButton } from './_components/auto-link';
 import { staggerStyle } from '@/lib/design/motion';
 
 export const metadata: Metadata = {
@@ -259,6 +260,7 @@ export default async function StravaAdminPage({
               </div>
               <div className="flex flex-col items-end gap-2">
                 <SyncNowButton />
+                <AutoLinkButton />
                 <div className="flex items-center gap-2">
                   <a href="/api/strava/authorize?relink=1" className="sd-btn sd-btn-quiet text-tiny">
                     Re-link
