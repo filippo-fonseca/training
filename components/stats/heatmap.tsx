@@ -200,6 +200,10 @@ function HeatCell({ cell, isToday, maxKm }: HeatCellProps) {
   return (
     <Link
       href={`/day/${cell.date}`}
+      // ~93 day cells render at once (including inside the dashboard's heatmap
+      // overlay); eager RSC prefetches from them abort noisily when the overlay
+      // closes, so prefetch on navigation intent only.
+      prefetch={false}
       title={tip}
       aria-label={tip}
       className="sd-soft-hover relative grid size-4 place-items-center rounded-[3px] outline-none focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-[var(--sd-accent)]"
