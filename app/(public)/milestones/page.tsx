@@ -9,6 +9,7 @@ import {
   FlameGlyph,
   TimerGlyph,
   TrophyGlyph,
+  ChartGlyph,
 } from "@/components/ui/icons";
 import { staggerStyle } from "@/lib/design/motion";
 import { cn } from "@/lib/design/cn";
@@ -204,6 +205,9 @@ export default async function MilestonesPage() {
           </NavItem>
           <NavItem href="/progress" icon={<TimerGlyph />}>
             Progress
+          </NavItem>
+          <NavItem href="/stats" icon={<ChartGlyph />}>
+            Stats
           </NavItem>
         </>
       }

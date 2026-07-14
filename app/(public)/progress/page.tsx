@@ -10,6 +10,7 @@ import {
   FlameGlyph,
   TrophyGlyph,
   TimerGlyph,
+  ChartGlyph,
 } from "@/components/ui/icons";
 import { staggerStyle } from "@/lib/design/motion";
 import { WeeklyKmChart, CumulativeKmChart } from "@/components/charts";
@@ -47,6 +48,9 @@ export default async function ProgressPage() {
           </NavItem>
           <NavItem href="/progress" icon={<TimerGlyph />} active>
             Progress
+          </NavItem>
+          <NavItem href="/stats" icon={<ChartGlyph />}>
+            Stats
           </NavItem>
         </>
       }
