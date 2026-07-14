@@ -30,11 +30,25 @@ const altId = (date: string, gate: string) => uuid5(`alt:${SLUG}:${date}:${gate}
 const milestoneId = (i: number) => uuid5(`milestone:${SLUG}:${i}`);
 const checkpointId = (i: number) => uuid5(`checkpoint:${SLUG}:${i}`);
 
-/** Map a week index to its owning phase index. */
-function phaseIndexForWeek(plan: ParsedPlan, weekIndex: number): number {
-  const phase = plan.phases.find((p) => weekIndex >= p.startWeek && weekIndex <= p.endWeek);
-  if (!phase) throw new Error(`No phase for week ${weekIndex}`);
-  return phase.phaseIndex;
+/**
+ * A phase's date window (migration 0008): the earliest start_date and latest
+ * end_date across its member weeks (weeks whose index falls in the phase's
+ * [startWeek, endWeek] span). This mirrors the migration backfill, so a freshly
+ * generated seed and a migrated live database land on identical phase windows.
+ * Weeks then match into phases by date containment at read time; there is no
+ * stored phase_id.
+ */
+function phaseDateRange(plan: ParsedPlan, startWeek: number, endWeek: number): {
+  start: string | null;
+  end: string | null;
+} {
+  const members = plan.weeks.filter((w) => w.weekIndex >= startWeek && w.weekIndex <= endWeek);
+  const starts = members.map((w) => w.startDate).filter((d): d is string => d != null);
+  const ends = members.map((w) => w.endDate).filter((d): d is string => d != null);
+  return {
+    start: starts.length ? starts.reduce((a, b) => (a < b ? a : b)) : null,
+    end: ends.length ? ends.reduce((a, b) => (a > b ? a : b)) : null,
+  };
 }
 
 function generate(plan: ParsedPlan): string {
@@ -106,12 +120,15 @@ function generate(plan: ParsedPlan): string {
   // --- phases ---
   out.push('-- phases');
   for (const p of plan.phases) {
+    const range = phaseDateRange(plan, p.startWeek, p.endWeek);
     out.push(
       upsert('plan_phases', {
         id: phaseId(p.phaseIndex),
         plan_id: pid,
         phase_index: p.phaseIndex,
         name: p.name,
+        start_date: range.start,
+        end_date: range.end,
         start_week: p.startWeek,
         end_week: p.endWeek,
         description: null,
@@ -127,7 +144,6 @@ function generate(plan: ParsedPlan): string {
       upsert('plan_weeks', {
         id: weekId(w.weekIndex),
         plan_id: pid,
-        phase_id: phaseId(phaseIndexForWeek(plan, w.weekIndex)),
         week_index: w.weekIndex,
         start_date: w.startDate,
         end_date: w.endDate,
