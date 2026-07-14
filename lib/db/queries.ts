@@ -326,6 +326,12 @@ export async function upsertLog(
   return data;
 }
 
+/** Remove the log for a day (owner only, enforced by RLS). */
+export async function deleteLog(client: TypedSupabaseClient, planDayId: string): Promise<void> {
+  const { error } = await client.from('session_logs').delete().eq('plan_day_id', planDayId);
+  if (error) throw new DbError('deleteLog', error);
+}
+
 // -----------------------------------------------------------------------------
 // Health entries (PRIVATE — owner only; RLS denies everyone else)
 // -----------------------------------------------------------------------------
@@ -342,17 +348,24 @@ export async function getHealthEntriesForDay(
   return data;
 }
 
+/** Insert or update the entry for a day (owner only; unique on plan_day_id). */
 export async function upsertHealthEntry(
   client: TypedSupabaseClient,
   entry: HealthEntryInsert,
 ): Promise<HealthEntry> {
   const { data, error } = await client
     .from('health_entries')
-    .upsert(entry)
+    .upsert(entry, { onConflict: 'plan_day_id' })
     .select('*')
     .single();
   if (error) throw new DbError('upsertHealthEntry', error);
   return data;
+}
+
+/** Remove the health entry for a day (owner only, enforced by RLS). */
+export async function deleteHealthEntry(client: TypedSupabaseClient, planDayId: string): Promise<void> {
+  const { error } = await client.from('health_entries').delete().eq('plan_day_id', planDayId);
+  if (error) throw new DbError('deleteHealthEntry', error);
 }
 
 // -----------------------------------------------------------------------------

@@ -453,6 +453,7 @@ export interface Database {
           actual_duration_min: number | null;
           actual_pace_text: string | null;
           actual_rpe: number | null;
+          actual_avg_hr: number | null;
           completed: boolean;
           modified: boolean;
           why_modified: string | null;
@@ -472,6 +473,7 @@ export interface Database {
           actual_duration_min?: number | null;
           actual_pace_text?: string | null;
           actual_rpe?: number | null;
+          actual_avg_hr?: number | null;
           completed?: boolean;
           modified?: boolean;
           why_modified?: string | null;

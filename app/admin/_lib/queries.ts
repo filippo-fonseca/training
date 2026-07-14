@@ -4,8 +4,17 @@
 // safe "is the database reachable / seeded" probe used for graceful states.
 
 import { createServerSupabaseClient } from '@/lib/auth/server';
-import { getWeeks, getDays, getSessionsForDay, getAlternativesForDay } from '@/lib/db';
-import type { Plan, PlanWeek, PlanDay, DaySession, DayAlternative } from '@/lib/types/database';
+import { getWeeks, getDays, getSessionsForDay, getAlternativesForDay, getPlan, DEFAULT_PLAN_SLUG } from '@/lib/db';
+import { todayInNewYork } from '@/components/calendar/date-utils';
+import type {
+  Plan,
+  PlanWeek,
+  PlanDay,
+  DaySession,
+  DayAlternative,
+  SessionLog,
+  HealthEntry,
+} from '@/lib/types/database';
 
 export interface PlanSummary {
   id: string;
@@ -142,4 +151,122 @@ export async function getDayEditorData(planId: string, dayId: string): Promise<D
     getWeeks(supabase, planId),
   ]);
   return { day, sessions, alternatives, weeks };
+}
+
+// -----------------------------------------------------------------------------
+// Logging + health surfaces (owner context). /admin/log and /admin/health are
+// top-level (not nested under a planId route), so they resolve the one active
+// plan themselves rather than taking it from the URL.
+// -----------------------------------------------------------------------------
+
+/** The default plan (owner context), or null when unconfigured/not seeded yet. */
+export async function getPlanForAdminSurfaces(): Promise<Plan | null> {
+  try {
+    const supabase = await createServerSupabaseClient();
+    return await getPlan(supabase, DEFAULT_PLAN_SLUG);
+  } catch {
+    return null;
+  }
+}
+
+export interface WeekContext {
+  weeks: PlanWeek[];
+  weekIndex: number;
+  week: PlanWeek | null;
+}
+
+/** Resolve which plan week to show: the requested index (clamped), or today's week, or week 1. */
+export async function resolveWeekIndex(planId: string, requested: number | null): Promise<WeekContext> {
+  const supabase = await createServerSupabaseClient();
+  const weeks = await getWeeks(supabase, planId);
+  const firstIndex = weeks[0]?.week_index ?? 1;
+  const lastIndex = weeks.at(-1)?.week_index ?? firstIndex;
+
+  let weekIndex = requested;
+  if (weekIndex == null) {
+    const today = todayInNewYork();
+    const { data } = await supabase
+      .from('plan_days')
+      .select('week_number')
+      .eq('plan_id', planId)
+      .eq('date', today)
+      .maybeSingle();
+    weekIndex = data?.week_number ?? firstIndex;
+  }
+  weekIndex = Math.min(Math.max(weekIndex, firstIndex), lastIndex);
+
+  const week = weeks.find((w) => w.week_index === weekIndex) ?? null;
+  return { weeks, weekIndex, week };
+}
+
+/** Every day in a plan week, ordered by date. */
+async function getDaysForWeek(planId: string, weekIndex: number): Promise<PlanDay[]> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from('plan_days')
+    .select('*')
+    .eq('plan_id', planId)
+    .eq('week_number', weekIndex)
+    .order('date', { ascending: true });
+  if (error) throw new Error(`getDaysForWeek(${weekIndex}): ${error.message}`);
+  return data ?? [];
+}
+
+export interface LogDayRow {
+  day: PlanDay;
+  primary: DaySession | null;
+  log: SessionLog | null;
+  alternatives: DayAlternative[];
+}
+
+/** Each day in the week plus its primary session, existing log, and gated alternatives. */
+export async function getLogRowsForWeek(planId: string, weekIndex: number): Promise<LogDayRow[]> {
+  const days = await getDaysForWeek(planId, weekIndex);
+  const dayIds = days.map((d) => d.id);
+  if (dayIds.length === 0) return [];
+
+  const supabase = await createServerSupabaseClient();
+  const [sessionsRes, logsRes, altsRes] = await Promise.all([
+    supabase.from('day_sessions').select('*').eq('slot', 'primary').in('plan_day_id', dayIds),
+    supabase.from('session_logs').select('*').in('plan_day_id', dayIds),
+    supabase.from('day_alternatives').select('*').in('plan_day_id', dayIds),
+  ]);
+  if (sessionsRes.error) throw new Error(`getLogRowsForWeek sessions: ${sessionsRes.error.message}`);
+  if (logsRes.error) throw new Error(`getLogRowsForWeek logs: ${logsRes.error.message}`);
+  if (altsRes.error) throw new Error(`getLogRowsForWeek alternatives: ${altsRes.error.message}`);
+
+  const primaryByDay = new Map((sessionsRes.data ?? []).map((s) => [s.plan_day_id, s] as const));
+  const logByDay = new Map((logsRes.data ?? []).map((l) => [l.plan_day_id, l] as const));
+  const altsByDay = new Map<string, DayAlternative[]>();
+  for (const a of altsRes.data ?? []) {
+    const list = altsByDay.get(a.plan_day_id) ?? [];
+    list.push(a);
+    altsByDay.set(a.plan_day_id, list);
+  }
+
+  return days.map((day) => ({
+    day,
+    primary: primaryByDay.get(day.id) ?? null,
+    log: logByDay.get(day.id) ?? null,
+    alternatives: altsByDay.get(day.id) ?? [],
+  }));
+}
+
+export interface HealthDayRow {
+  day: PlanDay;
+  entry: HealthEntry | null;
+}
+
+/** Each day in the week plus its health entry, if recorded. PRIVATE: owner context only. */
+export async function getHealthRowsForWeek(planId: string, weekIndex: number): Promise<HealthDayRow[]> {
+  const days = await getDaysForWeek(planId, weekIndex);
+  const dayIds = days.map((d) => d.id);
+  if (dayIds.length === 0) return [];
+
+  const supabase = await createServerSupabaseClient();
+  const { data: entries, error } = await supabase.from('health_entries').select('*').in('plan_day_id', dayIds);
+  if (error) throw new Error(`getHealthRowsForWeek: ${error.message}`);
+
+  const entryByDay = new Map((entries ?? []).map((e) => [e.plan_day_id as string, e] as const));
+  return days.map((day) => ({ day, entry: entryByDay.get(day.id) ?? null }));
 }
