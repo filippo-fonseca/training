@@ -52,7 +52,7 @@ export default async function DayPage({ params }: PageProps) {
   }
   if (data === null) notFound();
 
-  const { day, week, primary, secondary, alternatives, milestones, log, evidence, status } = data;
+  const { day, week, primary, secondary, alternatives, milestones, log, evidence, offPlan, status } = data;
   const statusMeta = STATUS_META[status];
   const backHref = `/calendar?month=${monthKey(date)}`;
 
@@ -118,7 +118,7 @@ export default async function DayPage({ params }: PageProps) {
           />
         ) : (
           <p className="rounded-sd-card border border-sd-line bg-sd-box/40 px-5 py-8 text-center text-sm text-sd-ink-faint">
-            No primary session recorded for this day.
+            Nothing planned for this day.
           </p>
         )}
       </div>
@@ -130,17 +130,20 @@ export default async function DayPage({ params }: PageProps) {
         </div>
       ) : null}
 
-      {/* Actual result: linked Strava evidence wins, manual log is the fallback */}
-      {log || evidence.length > 0 ? (
+      {/* Actual result: linked Strava evidence wins, manual log is the fallback.
+          An off-plan run has no planned session to compare, so it skips this
+          logged-vs-plan block and renders only the OFF-PLAN RUN evidence below. */}
+      {log || (evidence.length > 0 && !offPlan) ? (
         <div className="sd-enter" style={staggerStyle(4)}>
-          <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} evidence={evidence} />
+          <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} evidence={offPlan ? [] : evidence} />
         </div>
       ) : null}
 
-      {/* Strava verification badge(s): photo, title, outbound link */}
+      {/* Strava verification badge(s): photo, title, outbound link. An off-plan
+          day-level run is labelled "OFF-PLAN RUN" but still reads as verified. */}
       {evidence.length > 0 ? (
         <div className="sd-enter" style={staggerStyle(5)}>
-          <SessionEvidence evidence={evidence} />
+          <SessionEvidence evidence={evidence} offPlan={offPlan} />
         </div>
       ) : null}
     </DayFrame>
