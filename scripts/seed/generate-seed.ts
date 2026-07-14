@@ -65,7 +65,6 @@ function generate(plan: ParsedPlan): string {
       status: 'active',
       athlete_name: m.athleteName,
       athlete_age: m.athleteAge,
-      athlete_notes: m.athleteNotes,
       race_name: m.raceName,
       race_distance_km: m.raceDistanceKm,
       race_date: m.raceDate,
@@ -77,13 +76,32 @@ function generate(plan: ParsedPlan): string {
       total_planned_km: m.totalPlannedKm,
       north_star: m.northStar,
       plan_logic: m.planLogic,
-      medical_notes: m.medicalNotes,
       goal_a: m.goalA,
       goal_b: m.goalB,
       goal_c: m.goalC,
     }),
   );
   out.push('');
+
+  // --- private plan notes (owner-only sidecar; sealed decision D1) ---
+  // The clinical/injury narrative never lands on the public `plans` table; it
+  // goes to the owner-only `plan_private_notes` table. Only emitted when there
+  // is something to store. Conflict target is plan_id (the primary key).
+  if (m.medicalNotes !== null || m.athleteNotes !== null) {
+    out.push('-- private plan notes (owner-only)');
+    out.push(
+      upsert(
+        'plan_private_notes',
+        {
+          plan_id: pid,
+          medical_notes: m.medicalNotes,
+          athlete_notes: m.athleteNotes,
+        },
+        'plan_id',
+      ),
+    );
+    out.push('');
+  }
 
   // --- phases ---
   out.push('-- phases');

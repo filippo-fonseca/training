@@ -6,6 +6,7 @@
 import type { TypedSupabaseClient } from './client';
 import type {
   Plan,
+  PlanPrivateNotes,
   PlanPhase,
   PlanWeek,
   PlanDay,
@@ -21,6 +22,37 @@ import type {
 } from '../types/database';
 
 export const DEFAULT_PLAN_SLUG = 'baystate-2026';
+
+// Explicit public-safe column list for the plans table. NEVER select('*') on
+// plans: the clinical/injury narrative lives in the owner-only
+// plan_private_notes table (sealed decision D1), and an explicit projection
+// guarantees no future private column can leak into an anon read by accident.
+const PLAN_PUBLIC_COLUMNS = [
+  'id',
+  'slug',
+  'title',
+  'version',
+  'prepared_on',
+  'status',
+  'athlete_name',
+  'athlete_age',
+  'race_name',
+  'race_distance_km',
+  'race_date',
+  'race_start_time',
+  'race_location',
+  'race_course_notes',
+  'start_date',
+  'end_date',
+  'total_planned_km',
+  'north_star',
+  'plan_logic',
+  'goal_a',
+  'goal_b',
+  'goal_c',
+  'created_at',
+  'updated_at',
+].join(', ');
 
 class DbError extends Error {
   constructor(context: string, cause: { message: string; details?: string } | null) {
@@ -47,14 +79,40 @@ export async function getPlan(
   client: TypedSupabaseClient,
   slug: string = DEFAULT_PLAN_SLUG,
 ): Promise<Plan> {
-  const { data, error } = await client.from('plans').select('*').eq('slug', slug).single();
+  const { data, error } = await client
+    .from('plans')
+    .select(PLAN_PUBLIC_COLUMNS)
+    .eq('slug', slug)
+    .single<Plan>();
   if (error) throw new DbError(`getPlan(${slug})`, error);
   return data;
 }
 
 export async function getPlanById(client: TypedSupabaseClient, planId: string): Promise<Plan> {
-  const { data, error } = await client.from('plans').select('*').eq('id', planId).single();
+  const { data, error } = await client
+    .from('plans')
+    .select(PLAN_PUBLIC_COLUMNS)
+    .eq('id', planId)
+    .single<Plan>();
   if (error) throw new DbError(`getPlanById(${planId})`, error);
+  return data;
+}
+
+// -----------------------------------------------------------------------------
+// Plan private notes (PRIVATE — owner only; RLS denies everyone else). Holds the
+// clinical/injury narrative relocated off the public plans table (D1). Provided
+// for owner-side admin use; anon callers get an RLS-denied empty result.
+// -----------------------------------------------------------------------------
+export async function getPlanPrivateNotes(
+  client: TypedSupabaseClient,
+  planId: string,
+): Promise<PlanPrivateNotes | null> {
+  const { data, error } = await client
+    .from('plan_private_notes')
+    .select('*')
+    .eq('plan_id', planId)
+    .maybeSingle();
+  if (error) throw new DbError(`getPlanPrivateNotes(${planId})`, error);
   return data;
 }
 

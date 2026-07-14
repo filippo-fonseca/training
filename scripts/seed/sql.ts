@@ -37,18 +37,21 @@ export function uuid5(name: string): string {
 }
 
 /**
- * Build an idempotent upsert statement. Conflict target is the id primary key;
- * on conflict every non-id, non-created_at column is refreshed from the excluded
- * row and updated_at is bumped, so re-running the seed reflects the latest parse
- * without cascade-deleting any user data (logs, health entries).
+ * Build an idempotent upsert statement. The conflict target defaults to the `id`
+ * primary key but can be overridden (e.g. `plan_id` for tables keyed on the plan
+ * rather than a synthetic id). On conflict every column except the conflict
+ * target and created_at is refreshed from the excluded row and updated_at is
+ * bumped, so re-running the seed reflects the latest parse without
+ * cascade-deleting any user data (logs, health entries).
  */
 export function upsert(
   table: string,
   row: Record<string, SqlValue>,
+  conflictTarget: string = 'id',
 ): string {
   const cols = Object.keys(row);
   const values = cols.map((c) => lit(row[c]!));
-  const updatable = cols.filter((c) => c !== 'id' && c !== 'created_at');
+  const updatable = cols.filter((c) => c !== conflictTarget && c !== 'created_at');
   const setClause = updatable.map((c) => `${c} = excluded.${c}`);
   if (updatable.some((c) => c === 'updated_at')) {
     // keep updated_at fresh via the trigger too, but be explicit for clarity
@@ -56,6 +59,6 @@ export function upsert(
   return (
     `insert into public.${table} (${cols.join(', ')})\n` +
     `values (${values.join(', ')})\n` +
-    `on conflict (id) do update set ${setClause.join(', ')};`
+    `on conflict (${conflictTarget}) do update set ${setClause.join(', ')};`
   );
 }

@@ -53,7 +53,6 @@ export interface Database {
           status: string;
           athlete_name: string | null;
           athlete_age: number | null;
-          athlete_notes: string | null;
           race_name: string | null;
           race_distance_km: number | null;
           race_date: string | null;
@@ -65,7 +64,6 @@ export interface Database {
           total_planned_km: number | null;
           north_star: string | null;
           plan_logic: string | null;
-          medical_notes: string | null;
           goal_a: string | null;
           goal_b: string | null;
           goal_c: string | null;
@@ -81,7 +79,6 @@ export interface Database {
           status?: string;
           athlete_name?: string | null;
           athlete_age?: number | null;
-          athlete_notes?: string | null;
           race_name?: string | null;
           race_distance_km?: number | null;
           race_date?: string | null;
@@ -93,7 +90,6 @@ export interface Database {
           total_planned_km?: number | null;
           north_star?: string | null;
           plan_logic?: string | null;
-          medical_notes?: string | null;
           goal_a?: string | null;
           goal_b?: string | null;
           goal_c?: string | null;
@@ -102,6 +98,33 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['plans']['Insert']>;
         Relationships: [];
+      };
+      // PRIVATE (owner-only, including SELECT): clinical/injury narrative moved
+      // off the public plans table (sealed decision D1). Never anon-readable.
+      plan_private_notes: {
+        Row: {
+          plan_id: string;
+          medical_notes: string | null;
+          athlete_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          plan_id: string;
+          medical_notes?: string | null;
+          athlete_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['plan_private_notes']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'plan_private_notes_plan_id_fkey';
+            columns: ['plan_id'];
+            referencedRelation: 'plans';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       plan_phases: {
         Row: {
@@ -657,6 +680,8 @@ export interface Database {
 // Convenience row aliases used across the app.
 type PublicTables = Database['public']['Tables'];
 export type Plan = PublicTables['plans']['Row'];
+export type PlanPrivateNotes = PublicTables['plan_private_notes']['Row'];
+export type PlanPrivateNotesInsert = PublicTables['plan_private_notes']['Insert'];
 export type PlanPhase = PublicTables['plan_phases']['Row'];
 export type PlanWeek = PublicTables['plan_weeks']['Row'];
 export type PlanDay = PublicTables['plan_days']['Row'];
