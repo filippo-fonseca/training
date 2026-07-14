@@ -92,10 +92,13 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
         </pattern>
       </defs>
 
-      {/* Phase bands (behind everything). Narrow bands (short phases, or many
-          phases on a small container) hide their label instead of letting it
-          spill into the neighboring band; the band boundary itself (the
-          dashed divider) still reads fine on its own. */}
+      {/* Phase bands (behind everything). Each label is clipped to its own band
+          rect, so at narrow container widths (many phases compressed into the
+          same viewBox) a label can never bleed sideways into a neighboring
+          band's space; the labelFits pre-check additionally skips rendering
+          text for bands too narrow to hold it at all, rather than clipping it
+          to an illegible sliver. The band boundary itself (the dashed divider)
+          still reads fine on its own either way. */}
       {phases.map((p) => {
         const first = weekly.findIndex((w) => w.weekIndex === p.startWeek);
         const last = weekly.findIndex((w) => w.weekIndex === p.endWeek);
@@ -107,6 +110,7 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
         // Rough monospace width at 9.5px: ~5.7 viewBox units per character.
         const labelW = p.name.length * 5.7;
         const labelFits = labelW <= bandW - 4;
+        const clipId = `phase-clip-${p.startWeek}`;
         return (
           <g key={`${p.name}-${p.startWeek}`}>
             <rect
@@ -127,14 +131,20 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
               opacity={0.6}
             />
             {labelFits && (
-              <text
-                x={mid}
-                y={H - 14}
-                textAnchor="middle"
-                className="chart-phase-label"
-              >
-                {p.name}
-              </text>
+              <>
+                <clipPath id={clipId}>
+                  <rect x={bx0} y={PLOT.y1} width={bandW} height={PLOT.y0 - PLOT.y1} />
+                </clipPath>
+                <text
+                  x={mid}
+                  y={H - 14}
+                  textAnchor="middle"
+                  clipPath={`url(#${clipId})`}
+                  className="chart-phase-label"
+                >
+                  {p.name}
+                </text>
+              </>
             )}
           </g>
         );
