@@ -192,7 +192,13 @@ function HeatCell({ cell, isToday, maxKm }: HeatCellProps) {
     shortDateLabel(cell.date),
     cell.isRace ? 'Race day' : null,
     cell.isRest ? 'Rest' : `planned ${cell.plannedKm} km`,
-    cell.hasLog ? `done ${cell.completedKm} km` : planned ? 'not logged' : null,
+    cell.hasLog
+      ? `done ${cell.completedKm} km`
+      : cell.offPlan
+        ? `logged ${cell.completedKm} km off-plan`
+        : planned
+          ? 'not logged'
+          : null,
   ]
     .filter(Boolean)
     .join(' · ');

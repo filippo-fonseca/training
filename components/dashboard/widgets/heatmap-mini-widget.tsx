@@ -17,12 +17,14 @@ function mondayIndex(iso: string): number {
   return (day + 6) % 7;
 }
 
-/** Colour for one cell: race > logged intensity > planned > rest. */
+/** Colour for one cell: race > logged intensity > planned > rest. Logged volume
+ *  (on-plan AND off-plan) drives intensity, so an off-plan run still colours its
+ *  cell even though it never completes a planned session (decision D2). */
 function cellStyle(cell: HeatmapCell, max: number, isToday: boolean): React.CSSProperties {
   let background = "var(--sd-darker-box)"; // rest / empty
   if (cell.isRace) {
     background = "var(--sd-accent)";
-  } else if (cell.hasLog && cell.completedKm > 0) {
+  } else if (cell.completedKm > 0) {
     const ratio = max > 0 ? Math.min(1, cell.completedKm / max) : 0.4;
     const alpha = 0.3 + ratio * 0.7;
     background = `color-mix(in srgb, var(--sd-accent) ${Math.round(alpha * 100)}%, var(--sd-darker-box))`;

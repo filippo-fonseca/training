@@ -19,13 +19,17 @@ import type {
   SessionCategory,
 } from '../types/database';
 import { getWeeks, getDays, getLogsForPlan, getSessionsForPlan } from './queries';
+import { getEvidenceByDay, type EvidenceByDay } from './progress';
+import { effectiveActual } from '../derive';
 
 /** One plan day as a heatmap cell: planned running volume plus completed volume. */
 export interface HeatmapCell {
   date: string; // 'YYYY-MM-DD'
   weekNumber: number; // 1-based plan week (grid column)
   plannedKm: number;
-  /** Logged actual km for the day (0 until a completed log lands). */
+  /** Logged actual km for the day: cumulative linked-Strava volume (on-plan AND
+   *  off-plan both count) or the manual log, mirroring progress.ts attribution.
+   *  Drives the heatmap cell intensity. 0 until evidence or a log lands. */
   completedKm: number;
   /** Logged actual minutes for the day, or null when untimed/absent. */
   completedMin: number | null;
@@ -33,8 +37,13 @@ export interface HeatmapCell {
   isRest: boolean;
   /** True on race day: the finish line, styled specially. */
   isRace: boolean;
-  /** True when a completed session log exists for the day. */
+  /** True when the day COMPLETES a planned session: on-plan linked evidence or a
+   *  completed manual log (decision D2). Off-plan evidence never sets this. */
   hasLog: boolean;
+  /** True when the day carries logged volume that did NOT complete a session
+   *  (an off-plan run, or a logged-but-not-completed day): colours the cell but
+   *  reads honestly in the tooltip as off-plan. */
+  offPlan: boolean;
   /** Count of prescribed non-rest sessions on the day. */
   sessionsPlanned: number;
 }
@@ -118,6 +127,7 @@ export function computeStats(
   sessions: DaySession[],
   logs: SessionLog[],
   today: Date = new Date(),
+  evidenceByDay: EvidenceByDay = new Map(),
 ): StatsData {
   const todayIso = today.toISOString().slice(0, 10);
 
@@ -152,16 +162,31 @@ export function computeStats(
     const daySessions = sessionsByDay.get(day.id) ?? [];
     const nonRest = daySessions.filter((s) => s.category !== 'rest');
     const log = logByDay.get(day.id) ?? null;
-    const completed = log?.completed === true;
+    const de = evidenceByDay.get(day.id);
+    const activities = de?.activities ?? [];
+    const onPlan = de?.onPlan ?? false;
+    const hasEvidence = activities.length > 0;
+
+    // Logged VOLUME mirrors progress.ts computeWeeklyKm exactly: a day counts as
+    // logged when a log OR linked evidence exists, and linked evidence takes
+    // precedence over the manual log. On-plan AND off-plan evidence both count
+    // as volume here; the onPlan flag only gates session COMPLETION below (D2).
+    const hasVolumeSource = log != null || hasEvidence;
+    const actual = effectiveActual(activities, log);
+    const completedKm = hasVolumeSource && actual.distanceKm != null ? round1(actual.distanceKm) : 0;
+    const completedMin = hasVolumeSource ? actual.durationMin : null;
+
+    // Session COMPLETION mirrors progress.ts computeProgressSummary: only ON-PLAN
+    // linked evidence (or a completed manual log) completes a session, so an
+    // off-plan run's evidence is withheld from the done check (decision D2).
+    const done = effectiveActual(onPlan ? activities : [], log).done;
 
     const plannedKm = round1(day.planned_run_km ?? 0);
-    const completedKm = completed ? round1(log?.actual_distance_km ?? 0) : 0;
-    const completedMin = completed ? log?.actual_duration_min ?? null : null;
 
     totalPlannedKm = round1(totalPlannedKm + plannedKm);
     totalCompletedKm = round1(totalCompletedKm + completedKm);
     sessionsPlanned += nonRest.length;
-    if (completed) sessionsCompleted += nonRest.length;
+    if (done) sessionsCompleted += nonRest.length;
     if (completedKm > maxDayVolumeKm) maxDayVolumeKm = completedKm;
 
     for (const s of daySessions) {
@@ -170,7 +195,7 @@ export function computeStats(
         byTypeMap.set(s.category, round1((byTypeMap.get(s.category) ?? 0) + s.distance_km));
       }
     }
-    if (completed && log?.actual_duration_min != null) actualMinutes += log.actual_duration_min;
+    if (completedMin != null) actualMinutes += completedMin;
 
     heatmap.push({
       date: day.date,
@@ -180,7 +205,8 @@ export function computeStats(
       completedMin,
       isRest: plannedKm === 0,
       isRace: raceDate != null && day.date === raceDate,
-      hasLog: completed,
+      hasLog: done,
+      offPlan: completedKm > 0 && !done,
       sessionsPlanned: nonRest.length,
     });
   }
@@ -236,7 +262,9 @@ export function computeStats(
     totalWeeks: weeks.length,
     byType,
     maxDayVolumeKm,
-    anyLogged: logs.some((l) => l.completed),
+    // Logged when any session completed (on-plan evidence or a completed log) or
+    // any day carries logged volume (off-plan runs count), mirroring the seam.
+    anyLogged: heatmap.some((c) => c.hasLog || c.completedKm > 0),
   };
 
   return { summary, heatmap };
@@ -267,11 +295,12 @@ export async function getStats(
   plan: Plan,
   today?: Date,
 ): Promise<StatsData> {
-  const [weeks, days, sessions, logs] = await Promise.all([
+  const [weeks, days, sessions, logs, evidence] = await Promise.all([
     getWeeks(client, plan.id),
     getDays(client, plan.id),
     getSessionsForPlan(client, plan.id),
     getLogsForPlan(client, plan.id),
+    getEvidenceByDay(client, plan.id),
   ]);
-  return computeStats(plan, weeks, days, sessions, logs, today);
+  return computeStats(plan, weeks, days, sessions, logs, today, evidence);
 }
