@@ -82,9 +82,21 @@ export function JourneyHero({ view }: { view: JourneyView }) {
           className="sd-enter-hero flex flex-wrap items-end gap-x-12 gap-y-6"
           style={staggerStyle(3)}
         >
-          <div className="flex flex-col gap-1.5">
+          <div className="relative flex flex-col gap-1.5">
+            {/* Soft cyan glow anchored behind the hero's key number. This is a
+                diffuse gradient wash, not a second glossy orb, so it stays
+                within the one-orb-per-page cap. */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -left-8 -top-10 -z-10 h-40 w-40 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(circle, var(--hud-cyan-glow) 0%, transparent 70%)",
+                filter: "blur(14px)",
+              }}
+            />
             <span className="sd-stat-label">{cd.label}</span>
-            <span className="sd-numeral text-6xl font-bold leading-none tracking-tight text-sd-ink sm:text-7xl">
+            <span className="sd-numeral sd-punch text-6xl font-bold leading-none tracking-tight text-sd-ink sm:text-7xl">
               {cd.value}
             </span>
             {raceMeta ? (
