@@ -31,8 +31,6 @@ const plan: Plan = {
   status: "active",
   athlete_name: "Filippo",
   athlete_age: 20,
-  athlete_notes:
-    "Returning from probable patellofemoral pain (left knee) plus prior right-foot/plantar and calf issues. Previous HM PR 1:23:30; recorded HR max ~202 bpm.",
   race_name: "Baystate Half Marathon",
   race_distance_km: 21.1,
   race_date: "2026-10-18",
@@ -47,7 +45,6 @@ const plan: Plan = {
     "Rebuild running-specific durability first, then convert preserved aerobic fitness into a genuine PR attempt, without letting fast-returning fitness outrun tissue tolerance.",
   plan_logic:
     "Four separated easy runs, then five-day frequency, controlled threshold, full-distance easy tolerance, broken HM-specific work, a reduced-volume taper, and an evidence-based A/B/C race choice.",
-  medical_notes: null,
   goal_a: "sub-1:22 only if peak HM-specific work is controlled at RPE 7-8 and recovery is green.",
   goal_b: "clear PR under 1:23:30 if work supports ~3:57/km.",
   goal_c: "healthy controlled race if symptoms, weather, or fitness evidence is mixed.",
@@ -278,9 +275,9 @@ const milestones: Milestone[] = [
 /** The full day-one bundle, ready for computeView. */
 export function fixtureBundle(): JourneyBundle {
   return {
-    // Same public-safe projection as the live path, so the fixture (the
-    // fallback that actually serves when Supabase env vars are absent) never
-    // leaks the hand-authored clinical fixture fields (athlete_notes, etc.).
+    // Same public-safe projection as the live path. The fixture plan carries no
+    // private clinical fields at all (those live only in plan_private_notes per
+    // decision D1), so the public journey has nothing sensitive to leak.
     plan: toPublicPlan(plan),
     phases,
     weeks,

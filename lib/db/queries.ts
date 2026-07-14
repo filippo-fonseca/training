@@ -7,6 +7,7 @@ import type { TypedSupabaseClient } from './client';
 import type {
   Plan,
   PlanPrivateNotes,
+  PlanPrivateNotesInsert,
   PlanPhase,
   PlanWeek,
   PlanDay,
@@ -113,6 +114,21 @@ export async function getPlanPrivateNotes(
     .eq('plan_id', planId)
     .maybeSingle();
   if (error) throw new DbError(`getPlanPrivateNotes(${planId})`, error);
+  return data;
+}
+
+/** Insert or update the private clinical notes for a plan (owner only; unique on
+ *  plan_id). RLS denies non-owners, so this is safe only in owner context. */
+export async function upsertPlanPrivateNotes(
+  client: TypedSupabaseClient,
+  notes: PlanPrivateNotesInsert,
+): Promise<PlanPrivateNotes> {
+  const { data, error } = await client
+    .from('plan_private_notes')
+    .upsert(notes, { onConflict: 'plan_id' })
+    .select('*')
+    .single();
+  if (error) throw new DbError(`upsertPlanPrivateNotes(${notes.plan_id})`, error);
   return data;
 }
 

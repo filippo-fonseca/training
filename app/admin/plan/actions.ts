@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { requireOwner } from '@/lib/auth/owner';
 import { createServerSupabaseClient } from '@/lib/auth/server';
 import { str, reqStr, num, int, bool, fail, OK, dbMessage, type ActionResult } from '@/app/admin/_lib/form';
+import { upsertPlanPrivateNotes } from '@/lib/db';
 import type { TypedSupabaseClient } from '@/lib/db';
 
 // Every mutation refreshes the admin subtree and the public surfaces (which read
@@ -57,7 +58,6 @@ export async function updatePlan(planId: string, _prev: ActionResult, fd: FormDa
       prepared_on: str(fd, 'prepared_on'),
       athlete_name: str(fd, 'athlete_name'),
       athlete_age: int(fd, 'athlete_age'),
-      athlete_notes: str(fd, 'athlete_notes'),
       race_name: str(fd, 'race_name'),
       race_distance_km: num(fd, 'race_distance_km'),
       race_date: str(fd, 'race_date'),
@@ -69,13 +69,25 @@ export async function updatePlan(planId: string, _prev: ActionResult, fd: FormDa
       total_planned_km: num(fd, 'total_planned_km'),
       north_star: str(fd, 'north_star'),
       plan_logic: str(fd, 'plan_logic'),
-      medical_notes: str(fd, 'medical_notes'),
       goal_a: str(fd, 'goal_a'),
       goal_b: str(fd, 'goal_b'),
       goal_c: str(fd, 'goal_c'),
     })
     .eq('id', planId);
   if (error) return fail(dbMessage('Update plan', error.message));
+
+  // Clinical/injury narrative is owner-only and lives in plan_private_notes,
+  // never on the public plans row (decision D1). Upsert it separately.
+  try {
+    await upsertPlanPrivateNotes(supabase, {
+      plan_id: planId,
+      athlete_notes: str(fd, 'athlete_notes'),
+      medical_notes: str(fd, 'medical_notes'),
+    });
+  } catch (e) {
+    return fail(dbMessage('Update private notes', e instanceof Error ? e.message : 'unknown error'));
+  }
+
   revalidateAll(planId);
   return OK;
 }
