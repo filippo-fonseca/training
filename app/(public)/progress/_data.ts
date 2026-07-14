@@ -88,6 +88,8 @@ export async function loadProgress(): Promise<ProgressData> {
       getPhases(client, plan.id),
       getProgressSummary(client, plan.id),
     ]);
+    // A plan always has weeks; an empty series means the seed has not landed yet.
+    if (weekly.length === 0) return fixtureData();
     const todayIso = new Date().toISOString().slice(0, 10);
     return {
       plan,

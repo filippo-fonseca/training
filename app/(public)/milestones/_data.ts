@@ -171,6 +171,12 @@ export async function loadMilestones(): Promise<MilestonesData> {
       getCheckpoints(client, plan.id),
       getWeeks(client, plan.id),
     ]);
+    // A plan always has milestones and checkpoints; if the live query returns
+    // none, the seed for those tables has not landed yet (partial-seed timing).
+    // Prefer the faithful fixture over rendering an empty journey.
+    if (milestones.length === 0 && checkpoints.length === 0) {
+      return fixtureData();
+    }
     const weekEndByIndex = new Map<number, string>();
     for (const w of weeks as PlanWeek[]) {
       if (w.end_date) weekEndByIndex.set(w.week_index, w.end_date);
