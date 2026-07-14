@@ -79,9 +79,14 @@ export async function applyImport(raw: string): Promise<ApplyResult> {
     if (error) return { ok: false, errors: [dbMessage('Replace: delete existing plan', error.message)] };
   }
 
+  // The injury/clinical narrative is owner-only and never lives on the public
+  // plans row (decision D1). Split it off before inserting the plan, then write
+  // it to plan_private_notes below.
+  const { medical_notes, athlete_notes, ...planColumns } = doc.plan;
+
   const { data: planRow, error: planErr } = await supabase
     .from('plans')
-    .insert(doc.plan)
+    .insert(planColumns)
     .select('id')
     .single();
   if (planErr || !planRow) {
@@ -90,6 +95,14 @@ export async function applyImport(raw: string): Promise<ApplyResult> {
   const planId = planRow.id;
 
   try {
+    // Private notes: only write a row when there is actually something to store.
+    if (medical_notes !== null || athlete_notes !== null) {
+      const { error } = await supabase
+        .from('plan_private_notes')
+        .insert({ plan_id: planId, medical_notes, athlete_notes });
+      if (error) throw new Error(dbMessage('Insert private notes', error.message));
+    }
+
     // Phases -> id map by phase_index
     const phaseIdByIndex = new Map<number, string>();
     if (doc.phases.length > 0) {

@@ -62,7 +62,7 @@ The root record. `slug` and `title` are required; everything else is optional.
 | `prepared_on`       | date    | no       |                                                      |
 | `athlete_name`      | string  | no       |                                                      |
 | `athlete_age`       | integer | no       |                                                      |
-| `athlete_notes`     | string  | no       |                                                      |
+| `athlete_notes`     | string  | no       | Owner-only. Stored in `plan_private_notes`, never public. |
 | `race_name`         | string  | no       |                                                      |
 | `race_distance_km`  | number  | no       | Keep race distance a field; never assume "marathon". |
 | `race_date`         | date    | no       |                                                      |
@@ -74,7 +74,7 @@ The root record. `slug` and `title` are required; everything else is optional.
 | `total_planned_km`  | number  | no       |                                                      |
 | `north_star`        | string  | no       | One-line goal.                                       |
 | `plan_logic`        | string  | no       | Rationale prose.                                     |
-| `medical_notes`     | string  | no       |                                                      |
+| `medical_notes`     | string  | no       | Owner-only. Stored in `plan_private_notes`, never public. |
 | `goal_a`            | string  | no       | A goal (free text).                                  |
 | `goal_b`            | string  | no       | B goal.                                              |
 | `goal_c`            | string  | no       | C goal.                                              |
