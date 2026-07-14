@@ -6,6 +6,7 @@ import { TrophyGlyph, CalendarGlyph } from '@/components/ui/icons';
 import { staggerStyle } from '@/lib/design/motion';
 import type { CalendarData, CalendarDay } from './data';
 import type { Milestone } from '@/lib/types/database';
+import { effectiveActual } from '@/lib/derive';
 import { categoryMeta, STATUS_META, accentChip } from './status';
 import { formatKm, kmValue, sumKm } from './format';
 import { weekdayShort, shortDateLabel } from './date-utils';
@@ -26,7 +27,8 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
     .sort((a, b) => a.day.date.localeCompare(b.day.date));
 
   const plannedKm = week?.planned_km ?? sumKm(days.map((d) => d.day.planned_run_km));
-  const loggedKm = sumKm(days.map((d) => d.log?.actual_distance_km ?? null));
+  // Effective actual per day: linked Strava evidence wins, manual log is fallback.
+  const loggedKm = sumKm(days.map((d) => effectiveActual(d.evidence, d.log).distanceKm));
   const pct = plannedKm > 0 ? (loggedKm / plannedKm) * 100 : 0;
 
   return (
@@ -93,7 +95,8 @@ function WeekDayRow({
   index: number;
   checkpoint: boolean;
 }) {
-  const { day, primary, secondary, status, log } = cell;
+  const { day, primary, secondary, status, log, evidence } = cell;
+  const actual = effectiveActual(evidence, log);
   const cat = categoryMeta(primary?.category ?? null);
   const statusMeta = STATUS_META[status];
   const isRace = cat.accent === true;
@@ -177,9 +180,9 @@ function WeekDayRow({
         <span className="sd-numeral text-sm font-semibold text-sd-ink">
           {km ? `${km} km` : status === 'rest' ? '—' : ''}
         </span>
-        {log?.actual_distance_km != null ? (
+        {actual.distanceKm != null ? (
           <span className="sd-numeral text-[10px] text-ink-sage">
-            logged {formatKm(log.actual_distance_km)}
+            {actual.source === 'strava' ? 'verified' : 'logged'} {formatKm(actual.distanceKm)}
           </span>
         ) : statusMeta.emphasized && statusMeta.hueVar ? (
           <span className="flex items-center gap-1 text-[10px] text-sd-ink-faint">

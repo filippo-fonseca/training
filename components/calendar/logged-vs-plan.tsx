@@ -1,26 +1,35 @@
 import { Panel } from '@/components/ui/panel';
 import { cn } from '@/lib/design/cn';
 import type { DaySession, SessionLog } from '@/lib/types/database';
+import { effectiveActual, type ActivityEvidence } from '@/lib/derive';
 import { gateHue } from './status';
 import { formatKm } from './format';
 
 interface LoggedVsPlanProps {
-  log: SessionLog;
+  log: SessionLog | null;
   primary: DaySession | null;
   plannedKm: number | null;
+  /** Linked Strava activities. When present, actuals are their cumulative totals. */
+  evidence?: ActivityEvidence[];
 }
 
 /**
- * The logged result vs the plan, shown only when a session_log exists. Each row
- * pairs the planned target with the recorded actual; the traffic light and
- * "modified" flag make a deliberately reduced session read as success.
+ * The actual result vs the plan. Rendered when the session has a manual log OR
+ * linked Strava evidence. Linked evidence takes precedence: the Actual distance
+ * / duration become the cumulative totals across the linked activities, and the
+ * session reads as completed. When only a manual log exists it drives the
+ * actuals (and its pace / RPE / notes) as before.
  */
-export function LoggedVsPlan({ log, primary, plannedKm }: LoggedVsPlanProps) {
-  const tl = log.traffic_light;
+export function LoggedVsPlan({ log, primary, plannedKm, evidence = [] }: LoggedVsPlanProps) {
+  if (!log && evidence.length === 0) return null;
+  const actual = effectiveActual(evidence, log);
+  const fromStrava = actual.source === 'strava';
+  const tl = log?.traffic_light ?? null;
+
   return (
     <Panel padded className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="sd-stat-label">Logged result vs plan</span>
+        <span className="sd-stat-label">Actual result vs plan</span>
         <div className="flex items-center gap-2">
           {tl ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-sd-ink-dull">
@@ -28,7 +37,7 @@ export function LoggedVsPlan({ log, primary, plannedKm }: LoggedVsPlanProps) {
               <span className="capitalize">{tl}</span>
             </span>
           ) : null}
-          <StatusFlag completed={log.completed} modified={log.modified} />
+          <StatusFlag completed={actual.done} modified={log?.modified ?? false} />
         </div>
       </div>
 
@@ -40,32 +49,39 @@ export function LoggedVsPlan({ log, primary, plannedKm }: LoggedVsPlanProps) {
         <CompareRow
           label="Distance"
           planned={plannedKm != null && plannedKm > 0 ? formatKm(plannedKm) : '—'}
-          actual={log.actual_distance_km != null ? formatKm(log.actual_distance_km) : '—'}
+          actual={actual.distanceKm != null ? formatKm(actual.distanceKm) : '—'}
         />
-        <CompareRow label="Pace" planned={primary?.pace_text ?? '—'} actual={log.actual_pace_text ?? '—'} />
+        <CompareRow label="Pace" planned={primary?.pace_text ?? '—'} actual={log?.actual_pace_text ?? '—'} />
         <CompareRow
           label="RPE"
           planned={primary?.rpe_text ?? '—'}
-          actual={log.actual_rpe != null ? `${log.actual_rpe}/10` : '—'}
+          actual={log?.actual_rpe != null ? `${log.actual_rpe}/10` : '—'}
         />
-        {log.actual_duration_min != null ? (
-          <CompareRow label="Duration" planned={primary?.duration_text ?? '—'} actual={`${log.actual_duration_min} min`} />
+        {actual.durationMin != null ? (
+          <CompareRow label="Duration" planned={primary?.duration_text ?? '—'} actual={`${actual.durationMin} min`} />
         ) : null}
       </div>
 
-      {log.shoe_used ? (
+      {fromStrava ? (
+        <p className="text-tiny text-sd-ink-faint">
+          Actuals are the cumulative total across{' '}
+          {actual.activityCount === 1 ? 'the linked Strava activity' : `${actual.activityCount} linked Strava activities`}.
+        </p>
+      ) : null}
+
+      {log?.shoe_used ? (
         <p className="text-xs text-sd-ink-dull">
           <span className="text-sd-ink-faint">Shoe used: </span>
           {log.shoe_used}
         </p>
       ) : null}
-      {log.why_modified ? (
+      {log?.why_modified ? (
         <p className="text-xs leading-relaxed text-sd-ink-dull">
           <span className="text-sd-ink-faint">Why modified: </span>
           {log.why_modified}
         </p>
       ) : null}
-      {log.notes ? (
+      {log?.notes ? (
         <p className="text-sm leading-relaxed text-sd-ink-dull">{log.notes}</p>
       ) : null}
     </Panel>

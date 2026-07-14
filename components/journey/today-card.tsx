@@ -63,8 +63,14 @@ function km(n: number | null | undefined): string {
   return `${Number.isInteger(n) ? n : n.toFixed(1)} km`;
 }
 
-/** Status pill reflecting where today's session sits: logged, rest, or planned. */
-function todayPill(session: JourneyView["session"], log: SessionLog | null) {
+/** Status pill reflecting where today's session sits: verified (Strava evidence),
+ *  logged, rest, or planned. Linked evidence wins over the manual log. */
+function todayPill(
+  session: JourneyView["session"],
+  log: SessionLog | null,
+  actual: JourneyView["todayActual"],
+) {
+  if (actual.source === "strava") return { tone: "done" as StatusTone, label: "Done, verified" };
   if (log) {
     if (log.completed && !log.modified) return { tone: "done" as StatusTone, label: "Logged" };
     if (log.completed && log.modified) return { tone: "active" as StatusTone, label: "Logged, adjusted" };
@@ -96,7 +102,7 @@ function SecondaryRow({ session }: { session: DaySession }) {
 }
 
 export function TodayCard({ view }: { view: JourneyView }) {
-  const { session, todayLog, todayISO } = view;
+  const { session, todayLog, todayISO, todayActual } = view;
   const { primary, secondary, alternatives, day } = session;
 
   // Empty state: no plan day maps to today (before the plan starts, or after it ends).
@@ -116,8 +122,9 @@ export function TodayCard({ view }: { view: JourneyView }) {
     );
   }
 
-  const pill = todayPill(session, todayLog);
-  const hasLog = !!todayLog;
+  const pill = todayPill(session, todayLog, todayActual);
+  const hasActual = todayActual.source !== "none";
+  const verified = todayActual.source === "strava";
 
   return (
     <Panel className="flex flex-col gap-4">
@@ -167,12 +174,13 @@ export function TodayCard({ view }: { view: JourneyView }) {
         </div>
       ) : null}
 
-      {/* Actual vs plan — only once a log exists */}
-      {hasLog ? (
+      {/* Actual vs plan — once linked Strava evidence or a manual log exists.
+          Evidence precedence: distance/duration are cumulative Strava totals. */}
+      {hasActual ? (
         <div className="flex flex-col gap-3 rounded-sd-tile border border-sd-line bg-sd-dark-box p-4">
           <div className="flex items-center justify-between">
-            <span className="sd-stat-label">Logged</span>
-            {todayLog.traffic_light ? (
+            <span className="sd-stat-label">{verified ? "Done (Strava)" : "Logged"}</span>
+            {todayLog?.traffic_light ? (
               <span className="inline-flex items-center gap-1.5">
                 <span
                   aria-hidden
@@ -186,14 +194,23 @@ export function TodayCard({ view }: { view: JourneyView }) {
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Target label="Actual distance" value={km(todayLog.actual_distance_km)} />
-            <Target label="Actual pace" value={todayLog.actual_pace_text} />
+            <Target label="Actual distance" value={km(todayActual.distanceKm)} />
+            <Target label="Actual pace" value={todayLog?.actual_pace_text} />
             <Target
               label="Actual RPE"
-              value={todayLog.actual_rpe != null ? `${todayLog.actual_rpe}/10` : undefined}
+              value={todayLog?.actual_rpe != null ? `${todayLog.actual_rpe}/10` : undefined}
             />
           </div>
-          {todayLog.notes ? (
+          {verified && todayActual.activityCount > 0 ? (
+            <p className="text-tiny text-sd-ink-faint">
+              Cumulative across{" "}
+              {todayActual.activityCount === 1
+                ? "the linked Strava activity"
+                : `${todayActual.activityCount} linked Strava activities`}
+              .
+            </p>
+          ) : null}
+          {todayLog?.notes ? (
             <p className="text-xs leading-relaxed text-sd-ink-dull">{todayLog.notes}</p>
           ) : null}
         </div>

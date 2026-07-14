@@ -6,6 +6,7 @@ import { SessionDetail } from '@/components/calendar/session-detail';
 import { Alternatives } from '@/components/calendar/alternatives';
 import { MilestoneBadges } from '@/components/calendar/milestone-badges';
 import { LoggedVsPlan } from '@/components/calendar/logged-vs-plan';
+import { SessionEvidence } from '@/components/calendar/session-evidence';
 import { STATUS_META } from '@/components/calendar/status';
 import {
   isISODate,
@@ -50,7 +51,7 @@ export default async function DayPage({ params }: PageProps) {
   }
   if (data === null) notFound();
 
-  const { day, week, primary, secondary, alternatives, milestones, log, status } = data;
+  const { day, week, primary, secondary, alternatives, milestones, log, evidence, status } = data;
   const statusMeta = STATUS_META[status];
   const backHref = `/calendar?month=${monthKey(date)}`;
 
@@ -118,8 +119,11 @@ export default async function DayPage({ params }: PageProps) {
       {/* Secondary session */}
       {secondary ? <SessionDetail session={secondary} slot="secondary" /> : null}
 
-      {/* Logged result */}
-      {log ? <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} /> : null}
+      {/* Actual result: linked Strava evidence wins, manual log is the fallback */}
+      <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} evidence={evidence} />
+
+      {/* Strava verification badge(s): photo, title, outbound link */}
+      <SessionEvidence evidence={evidence} />
     </DayFrame>
   );
 }

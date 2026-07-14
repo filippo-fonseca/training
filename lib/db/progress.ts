@@ -12,7 +12,24 @@
 
 import type { TypedSupabaseClient } from './client';
 import type { PlanWeek, PlanDay, SessionLog } from '../types/database';
-import { getWeeks, getDays, getLogsForPlan } from './queries';
+import {
+  getWeeks,
+  getDays,
+  getLogsForPlan,
+  getStravaActivities,
+  getActivityLinksForPlan,
+} from './queries';
+import {
+  effectiveActual,
+  evidenceById,
+  groupEvidenceByDay,
+  type ActivityEvidence,
+} from '../derive';
+
+/** Linked Strava evidence per plan_day_id. Empty map = no links (log fallback). */
+export type EvidenceByDay = Map<string, ActivityEvidence[]>;
+
+const NO_EVIDENCE: EvidenceByDay = new Map();
 
 /** One week's planned ceiling and (optional) logged actual, plus phase context. */
 export interface WeeklyKm {
@@ -73,6 +90,7 @@ export function computeWeeklyKm(
   weeks: PlanWeek[],
   days: PlanDay[],
   logs: SessionLog[],
+  evidenceByDay: EvidenceByDay = NO_EVIDENCE,
 ): WeeklyKm[] {
   const daysByWeek = new Map<string, PlanDay[]>();
   for (const day of days) {
@@ -80,17 +98,20 @@ export function computeWeeklyKm(
     list.push(day);
     daysByWeek.set(day.week_id, list);
   }
-  // Actual km + logged-day set, keyed by plan_day_id.
+  const logByDay = new Map<string, SessionLog>();
+  for (const log of logs) logByDay.set(log.plan_day_id, log);
+
+  // Effective actual km per day: linked Strava evidence takes precedence over the
+  // manual log (lib/derive). A day counts as "logged" when either exists.
   const actualByDay = new Map<string, number>();
   const loggedDayIds = new Set<string>();
-  for (const log of logs) {
-    loggedDayIds.add(log.plan_day_id);
-    if (log.actual_distance_km != null) {
-      actualByDay.set(
-        log.plan_day_id,
-        (actualByDay.get(log.plan_day_id) ?? 0) + log.actual_distance_km,
-      );
-    }
+  for (const day of days) {
+    const log = logByDay.get(day.id) ?? null;
+    const evidence = evidenceByDay.get(day.id) ?? [];
+    if (!log && evidence.length === 0) continue;
+    loggedDayIds.add(day.id);
+    const actual = effectiveActual(evidence, log);
+    if (actual.distanceKm != null) actualByDay.set(day.id, actual.distanceKm);
   }
 
   return [...weeks]
@@ -158,6 +179,7 @@ export function computeProgressSummary(
   logs: SessionLog[],
   days: PlanDay[],
   today: Date = new Date(),
+  evidenceByDay: EvidenceByDay = NO_EVIDENCE,
 ): ProgressSummary {
   const todayIso = today.toISOString().slice(0, 10);
 
@@ -175,7 +197,16 @@ export function computeProgressSummary(
     }
   }
 
-  const completedLogs = logs.filter((l) => l.completed).length;
+  // A session is done when >= 1 Strava activity is linked to its day, else when
+  // its manual log says completed (evidence precedence, lib/derive).
+  const logByDay = new Map(logs.map((l) => [l.plan_day_id, l] as const));
+  let completedSessions = 0;
+  for (const day of days) {
+    const log = logByDay.get(day.id) ?? null;
+    const evidence = evidenceByDay.get(day.id) ?? [];
+    if (!log && evidence.length === 0) continue;
+    if (effectiveActual(evidence, log).done) completedSessions += 1;
+  }
 
   return {
     totalPlannedKm: totalPlanned,
@@ -183,7 +214,7 @@ export function computeProgressSummary(
     completionRate: totalPlanned > 0 ? clamp01(totalActual / totalPlanned) : 0,
     plannedToDateKm: plannedToDate,
     onPlanRate: plannedToDate > 0 ? clamp01(totalActual / plannedToDate) : 0,
-    loggedSessions: completedLogs,
+    loggedSessions: completedSessions,
     totalSessions: days.filter((d) => (d.planned_run_km ?? 0) > 0).length,
     weeksElapsed,
     totalWeeks: weekly.length,
@@ -194,17 +225,35 @@ function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
+/** Fetch linked Strava evidence for a plan, grouped by plan_day_id. Never throws:
+ *  evidence is additive, so a failed read degrades to the manual-log fallback. */
+export async function getEvidenceByDay(
+  client: TypedSupabaseClient,
+  planId: string,
+): Promise<EvidenceByDay> {
+  try {
+    const [{ links, sessionDay }, activities] = await Promise.all([
+      getActivityLinksForPlan(client, planId),
+      getStravaActivities(client),
+    ]);
+    return groupEvidenceByDay(links, evidenceById(activities), sessionDay);
+  } catch {
+    return new Map();
+  }
+}
+
 /** Async reader: weekly planned-vs-actual km for a plan via the anon client. */
 export async function getWeeklyKm(
   client: TypedSupabaseClient,
   planId: string,
 ): Promise<WeeklyKm[]> {
-  const [weeks, days, logs] = await Promise.all([
+  const [weeks, days, logs, evidence] = await Promise.all([
     getWeeks(client, planId),
     getDays(client, planId),
     getLogsForPlan(client, planId),
+    getEvidenceByDay(client, planId),
   ]);
-  return computeWeeklyKm(weeks, days, logs);
+  return computeWeeklyKm(weeks, days, logs, evidence);
 }
 
 /** Async reader: cumulative planned/actual km series for a plan. */
@@ -221,11 +270,12 @@ export async function getProgressSummary(
   planId: string,
   today?: Date,
 ): Promise<ProgressSummary> {
-  const [weeks, days, logs] = await Promise.all([
+  const [weeks, days, logs, evidence] = await Promise.all([
     getWeeks(client, planId),
     getDays(client, planId),
     getLogsForPlan(client, planId),
+    getEvidenceByDay(client, planId),
   ]);
-  const weekly = computeWeeklyKm(weeks, days, logs);
-  return computeProgressSummary(weekly, logs, days, today);
+  const weekly = computeWeeklyKm(weeks, days, logs, evidence);
+  return computeProgressSummary(weekly, logs, days, today, evidence);
 }
