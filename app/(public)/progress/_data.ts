@@ -15,10 +15,12 @@ import {
   computeCumulative,
   computeProgressSummary,
   type Plan,
+  type PlanPhase,
   type WeeklyKm,
   type CumulativePoint,
   type ProgressSummary,
 } from "@/lib/db";
+import { assignWeeksToPhases } from "@/lib/derive";
 import {
   FIXTURE_PLAN,
   FIXTURE_WEEKLY,
@@ -50,6 +52,29 @@ function anonClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   return createSupabaseClient(url, key);
+}
+
+/**
+ * Chart phase bands, derived from the phases' date windows (migration 0008).
+ * Each band spans the week-index range of the weeks that match the phase by
+ * date containment (the shared lib/derive rule). Phases that match no week
+ * produce no band. The chart's x-axis is week index, so the bands are expressed
+ * as [startWeek, endWeek] over the weekly series.
+ */
+function bandsFromPhases(phases: PlanPhase[], weekly: WeeklyKm[]): PhaseBand[] {
+  const weeksForRule = weekly.map((w) => ({
+    id: String(w.weekIndex),
+    week_index: w.weekIndex,
+    start_date: w.startDate,
+  }));
+  const { byPhaseId } = assignWeeksToPhases(phases, weeksForRule);
+  const bands: PhaseBand[] = [];
+  for (const p of phases) {
+    const ws = byPhaseId.get(p.id) ?? [];
+    if (ws.length === 0) continue;
+    bands.push({ name: p.name, startWeek: ws[0].week_index, endWeek: ws[ws.length - 1].week_index });
+  }
+  return bands;
 }
 
 /** Which 1-based week contains `today`, or null if outside the plan window. */
@@ -95,9 +120,7 @@ export async function loadProgress(): Promise<ProgressData> {
       plan,
       weekly,
       cumulative,
-      phases: phases
-        .filter((p) => p.start_week != null && p.end_week != null)
-        .map((p) => ({ name: p.name, startWeek: p.start_week!, endWeek: p.end_week! })),
+      phases: bandsFromPhases(phases, weekly),
       summary,
       currentWeek: weekForDate(weekly, todayIso),
       fromFixture: false,
