@@ -48,7 +48,7 @@ these to `.env.local` and your Vercel project settings yourself.)
 
 Same calendar date (America/New_York) + sport family: Run-type activities match a
 day with a run session (or planned running distance); Ride-type match a `bike`
-day. At most one activity auto-matches per (day, family) — a second run on the same
+day. At most one activity auto-matches per (day, family); a second run on the same
 day is left **Unmatched** for manual linking. Manual link/unlink and re-link/unlink
 live on `/admin/strava`.
 
@@ -59,5 +59,5 @@ logging unit).
 ## Tests
 
 `npm run test` runs the pure-logic unit tests (matching + OAuth URL) with mocked
-inputs — no network or DB. Live-verify the full OAuth + sync path once real Strava
+inputs: no network or DB. Live-verify the full OAuth + sync path once real Strava
 credentials are configured.
