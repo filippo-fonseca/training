@@ -1,4 +1,4 @@
-// Daily auto-link core — SERVER-ONLY. One code path shared by the Vercel cron
+// Daily auto-link core. SERVER-ONLY. One code path shared by the Vercel cron
 // route (service-role client) and the admin "Auto-link today's runs" button
 // (owner cookie client). It refreshes activities via the existing sync, then
 // links the day's Run activities to the plan: to the day's running-category

@@ -105,7 +105,7 @@ export function computeWeeklyKm(
 
   // Effective actual km per day: linked Strava evidence takes precedence over the
   // manual log (lib/derive). A day counts as "logged" when either exists. Off-plan
-  // (day-level) evidence still contributes its km volume here — the on-plan flag
+  // (day-level) evidence still contributes its km volume here; the on-plan flag
   // only gates session COMPLETION, not logged volume (decision D2).
   const actualByDay = new Map<string, number>();
   const loggedDayIds = new Set<string>();

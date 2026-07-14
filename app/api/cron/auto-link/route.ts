@@ -1,4 +1,4 @@
-// GET /api/cron/auto-link — the scheduled daily auto-linker (see vercel.json).
+// GET /api/cron/auto-link: the scheduled daily auto-linker (see vercel.json).
 // Secured by a CRON_SECRET bearer check exactly like /api/cron/strava-sync
 // (Vercel Cron sends `Authorization: Bearer $CRON_SECRET` automatically). It has
 // no owner session, so it runs on the service-role client. The core refreshes
