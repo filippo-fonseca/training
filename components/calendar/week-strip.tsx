@@ -2,9 +2,10 @@ import Link from 'next/link';
 import { cn } from '@/lib/design/cn';
 import { Panel } from '@/components/ui/panel';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { TrophyGlyph } from '@/components/ui/icons';
+import { TrophyGlyph, CalendarGlyph } from '@/components/ui/icons';
 import { staggerStyle } from '@/lib/design/motion';
 import type { CalendarData, CalendarDay } from './data';
+import type { Milestone } from '@/lib/types/database';
 import { categoryMeta, STATUS_META, accentChip } from './status';
 import { formatKm, kmValue, sumKm } from './format';
 import { weekdayShort, shortDateLabel } from './date-utils';
@@ -37,7 +38,7 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
           <h2 className="text-lg font-semibold text-sd-ink">{week?.phase_label ?? 'Week'}</h2>
           {week?.range_min_km != null && week?.range_max_km != null ? (
             <span className="sd-numeral text-xs text-sd-ink-faint">
-              Range {kmValue(week.range_min_km)}–{kmValue(week.range_max_km)} km
+              Range {kmValue(week.range_min_km)}-{kmValue(week.range_max_km)} km
               {week.long_run_km ? ` · long run ${kmValue(week.long_run_km)} km` : ''}
             </span>
           ) : null}
@@ -61,7 +62,13 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
           <p className="p-5 text-sm text-sd-ink-faint">No days found for this week.</p>
         ) : (
           days.map((cell, i) => (
-            <WeekDayRow key={cell.day.date} cell={cell} isToday={cell.day.date === data.today} index={i} />
+            <WeekDayRow
+              key={cell.day.date}
+              cell={cell}
+              isToday={cell.day.date === data.today}
+              index={i}
+              checkpoint={hasDecisionCheckpoint(data.milestonesByDate.get(cell.day.date))}
+            />
           ))
         )}
       </div>
@@ -69,7 +76,23 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
   );
 }
 
-function WeekDayRow({ cell, isToday, index }: { cell: CalendarDay; isToday: boolean; index: number }) {
+/** True when a day carries a decision checkpoint, the plan's 4 traffic-light
+ *  gate points where the coming week's load depends on how the body responds. */
+function hasDecisionCheckpoint(milestones: Milestone[] | undefined): boolean {
+  return (milestones ?? []).some((m) => m.type === 'decision_checkpoint');
+}
+
+function WeekDayRow({
+  cell,
+  isToday,
+  index,
+  checkpoint,
+}: {
+  cell: CalendarDay;
+  isToday: boolean;
+  index: number;
+  checkpoint: boolean;
+}) {
   const { day, primary, secondary, status, log } = cell;
   const cat = categoryMeta(primary?.category ?? null);
   const statusMeta = STATUS_META[status];
@@ -126,6 +149,16 @@ function WeekDayRow({ cell, isToday, index }: { cell: CalendarDay; isToday: bool
           <span className="truncate text-sm font-medium text-sd-ink">
             {status === 'rest' ? 'Rest' : primary?.title ?? 'Session'}
           </span>
+          {checkpoint ? (
+            <span
+              className="inline-flex shrink-0 items-center gap-1 rounded-sd-chrome border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em]"
+              style={accentChip}
+              title="Decision checkpoint: this day's result gates the coming week's load."
+            >
+              <CalendarGlyph width={11} height={11} />
+              Checkpoint
+            </span>
+          ) : null}
         </div>
         {secondary?.title ? (
           <span className="truncate pl-4 text-xs text-sd-ink-faint">+ {secondary.title}</span>

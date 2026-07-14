@@ -228,7 +228,7 @@ export default async function MilestonesPage() {
             </h1>
             <p className="max-w-xl text-pretty text-sd-ink-dull">
               Every decision checkpoint, gated long run, key workout, and the
-              taper — leading to {plan.race_name?.toLowerCase()} on{" "}
+              taper, leading to {plan.race_name?.toLowerCase()} on{" "}
               {plan.race_date}. Green, amber, and coral gates govern each step.
             </p>
             <div className="mt-1 flex items-center gap-2">

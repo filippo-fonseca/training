@@ -26,11 +26,11 @@ sessions, status, and a logged summary once one exists.
   "sessions": [
     {
       "slot": "primary",
-      "title": "Easy aerobic run",
+      "title": "Easy return run",
       "type": "easy_run",
-      "distance_km": 6,
-      "duration": "35-40 min",
-      "targets": { "pace": "5:45-6:15/km", "rpe": "3-4", "hr": "Zone 2" }
+      "distance_km": 3.2,
+      "duration": "25-32 min plus walk",
+      "targets": { "pace": "5:05-5:40/km", "rpe": "2/10", "hr": "135-158 bpm" }
     }
   ],
   "status": "planned",
@@ -43,9 +43,9 @@ Once a session has been logged, `logged` is populated and `status` becomes
 
 ```json
 "logged": {
-  "distance_km": 6.2,
-  "duration_min": 37,
-  "pace": "5:58/km",
+  "distance_km": 3.2,
+  "duration_min": 28,
+  "pace": "5:22/km",
   "status": "green"
 }
 ```
@@ -67,10 +67,10 @@ Once a session has been logged, `logged` is populated and `status` becomes
 
 ### Status derivation
 
-- `rest` — no plan day is scheduled for today, or today is an explicit rest day.
-- `planned` — a session is scheduled and nothing has been logged yet.
-- `logged` — a session log exists and was recorded as completed.
-- `missed` — a session log exists but was recorded as not completed.
+- `rest`: no plan day is scheduled for today, or today is an explicit rest day.
+- `planned`: a session is scheduled and nothing has been logged yet.
+- `logged`: a session log exists and was recorded as completed.
+- `missed`: a session log exists but was recorded as not completed.
 
 ## GET /api/public/status
 
@@ -80,8 +80,8 @@ The lightweight variant, for a compact widget chip.
 {
   "date": "2026-07-13",
   "status": "planned",
-  "session_title": "Easy aerobic run",
-  "distance_km": 6,
+  "session_title": "Easy return run",
+  "distance_km": 3.2,
   "countdown_days": 97
 }
 ```
@@ -99,7 +99,7 @@ origins; every other origin gets a response with no ACAO header:
 
 ## Caching
 
-`Cache-Control: public, s-maxage=60, stale-while-revalidate=300` — the CDN
+`Cache-Control: public, s-maxage=60, stale-while-revalidate=300`: the CDN
 edge may serve a cached response for up to 60 seconds, and a stale one for up
 to 5 more minutes while it revalidates in the background.
 

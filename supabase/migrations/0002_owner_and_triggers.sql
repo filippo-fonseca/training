@@ -70,15 +70,49 @@ begin
 end $$;
 
 -- -----------------------------------------------------------------------------
--- Bootstrap the owner. This value is the ONLY thing that grants write access,
--- so it is seeded here (not in seed.sql, which is regenerated from the plan doc).
--- Conductor-confirmed owner email: filifonsecacagnazzo@gmail.com.
--- Idempotent upsert.
+-- Seed defaults. admin_email starts unset: it is never hardcoded in a
+-- migration (this repo is open source and has no way to know a deployer's
+-- email). It is bootstrapped instead from the ADMIN_EMAIL environment
+-- variable on first authenticated request; see bootstrap_admin_email() below
+-- and lib/auth/owner.ts.
 -- -----------------------------------------------------------------------------
 insert into public.app_settings (key, value)
-values ('admin_email', 'filifonsecacagnazzo@gmail.com')
-on conflict (key) do update set value = excluded.value, updated_at = now();
+values ('admin_email', null)
+on conflict (key) do nothing;
 
 insert into public.app_settings (key, value)
 values ('timezone', 'America/New_York')
 on conflict (key) do update set value = excluded.value, updated_at = now();
+
+-- -----------------------------------------------------------------------------
+-- bootstrap_admin_email(text) — one-time claim of ownership.
+--
+-- Sets app_settings.admin_email the first time it is called, and only when
+-- the row is currently null. SECURITY DEFINER so it can write app_settings
+-- before is_owner() has anyone to say yes to (otherwise bootstrapping would
+-- be circular: no owner exists yet, so no owner-only policy would allow the
+-- write). Safe to expose to any authenticated caller because it can only ever
+-- set the value once; after that it is a no-op, so it cannot be used to
+-- hijack an already-claimed instance.
+-- -----------------------------------------------------------------------------
+create or replace function public.bootstrap_admin_email(claimed_email text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.app_settings
+  set value = lower(claimed_email), updated_at = now()
+  where key = 'admin_email'
+    and value is null
+    and claimed_email is not null
+    and claimed_email <> '';
+end;
+$$;
+
+comment on function public.bootstrap_admin_email(text) is
+  'One-time claim: sets app_settings.admin_email when it is currently null. No-op once an owner is set. Called from the app server with ADMIN_EMAIL on first authenticated request, never with client-supplied input.';
+
+revoke all on function public.bootstrap_admin_email(text) from public;
+grant execute on function public.bootstrap_admin_email(text) to authenticated;

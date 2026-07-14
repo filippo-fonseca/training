@@ -3,11 +3,11 @@ import { linearScale, niceCeil, ticks } from "./scale";
 import { ChartFrame, LegendSwatch } from "./chart-frame";
 
 /**
- * WeeklyKmChart — hand-built SVG (no chart library). Per week: a recessed
+ * WeeklyKmChart (hand-built SVG, no chart library). Per week: a recessed
  * planned-km track bar (the ceiling), with the logged actual km drawn as a
  * solid accent fill inside it. Weeks with no log yet render the planned bar as
- * the brief's 45-degree accent hatch — the "planned but not yet run"
- * projection idiom — so early empty weeks read as intentional, not as zeros.
+ * the brief's 45-degree accent hatch, the "planned but not yet run"
+ * projection idiom, so early empty weeks read as intentional, not as zeros.
  * Phase bands sit behind the columns, labeled along the baseline.
  *
  * Colors are tokens only. Bars grow from the baseline via a CSS transform
@@ -55,7 +55,7 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
 
   return (
     <ChartFrame
-      label="Weekly volume — planned vs actual"
+      label="Weekly volume: planned vs actual"
       caption="Planned km is a ceiling, not a floor. Bars not yet run show as a hatched projection."
       titleId="weekly-km"
       desc={`Bar chart of weekly running volume across ${weekly.length} weeks. Planned kilometres per week: ${weekly
@@ -92,7 +92,13 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
         </pattern>
       </defs>
 
-      {/* Phase bands (behind everything) */}
+      {/* Phase bands (behind everything). Each label is clipped to its own band
+          rect, so at narrow container widths (many phases compressed into the
+          same viewBox) a label can never bleed sideways into a neighboring
+          band's space; the labelFits pre-check additionally skips rendering
+          text for bands too narrow to hold it at all, rather than clipping it
+          to an illegible sliver. The band boundary itself (the dashed divider)
+          still reads fine on its own either way. */}
       {phases.map((p) => {
         const first = weekly.findIndex((w) => w.weekIndex === p.startWeek);
         const last = weekly.findIndex((w) => w.weekIndex === p.endWeek);
@@ -100,12 +106,17 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
         const bx0 = PLOT.x0 + slot * first;
         const bx1 = PLOT.x0 + slot * (last + 1);
         const mid = (bx0 + bx1) / 2;
+        const bandW = bx1 - bx0;
+        // Rough monospace width at 9.5px: ~5.7 viewBox units per character.
+        const labelW = p.name.length * 5.7;
+        const labelFits = labelW <= bandW - 4;
+        const clipId = `phase-clip-${p.startWeek}`;
         return (
           <g key={`${p.name}-${p.startWeek}`}>
             <rect
               x={bx0}
               y={PLOT.y1}
-              width={bx1 - bx0}
+              width={bandW}
               height={PLOT.y0 - PLOT.y1}
               fill={first % 2 === 0 ? "color-mix(in srgb, var(--sd-box) 40%, transparent)" : "transparent"}
             />
@@ -119,14 +130,22 @@ export function WeeklyKmChart({ weekly, phases = [], currentWeek }: WeeklyKmChar
               strokeDasharray="2 4"
               opacity={0.6}
             />
-            <text
-              x={mid}
-              y={H - 14}
-              textAnchor="middle"
-              className="chart-phase-label"
-            >
-              {p.name}
-            </text>
+            {labelFits && (
+              <>
+                <clipPath id={clipId}>
+                  <rect x={bx0} y={PLOT.y1} width={bandW} height={PLOT.y0 - PLOT.y1} />
+                </clipPath>
+                <text
+                  x={mid}
+                  y={H - 14}
+                  textAnchor="middle"
+                  clipPath={`url(#${clipId})`}
+                  className="chart-phase-label"
+                >
+                  {p.name}
+                </text>
+              </>
+            )}
           </g>
         );
       })}

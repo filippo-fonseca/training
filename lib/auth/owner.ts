@@ -36,6 +36,19 @@ export interface OwnerSession {
 }
 
 /**
+ * Claims app_settings.admin_email from ADMIN_EMAIL on the first authenticated
+ * request. A no-op once an owner is already set (see bootstrap_admin_email()
+ * in 0002_owner_and_triggers.sql), so this is safe to call on every request.
+ * ADMIN_EMAIL is the single source of owner identity; this is what persists
+ * that choice into the database, where is_owner() and every RLS policy
+ * actually enforce it.
+ */
+async function bootstrapAdminEmail(email: string): Promise<void> {
+  const supabase = await createServerSupabaseClient();
+  await supabase.rpc('bootstrap_admin_email', { claimed_email: email });
+}
+
+/**
  * Server guard for admin surfaces. Redirects to /login unless the caller is the
  * authenticated owner. Use at the top of admin layouts/pages and server actions.
  */
@@ -43,6 +56,10 @@ export async function requireOwner(): Promise<OwnerSession> {
   const user = await getSessionUser();
   if (!user || !isOwnerEmail(user.email)) {
     redirect('/login');
+  }
+  const admin = getAdminEmail();
+  if (admin) {
+    await bootstrapAdminEmail(admin);
   }
   return { user, email: user.email as string };
 }

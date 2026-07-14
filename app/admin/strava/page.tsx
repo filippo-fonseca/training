@@ -189,17 +189,17 @@ export default async function StravaAdminPage({
           <ul className="mt-3 space-y-1.5 text-xs text-sd-ink-faint">
             <li>
               <code className="sd-numeral">STRAVA_CLIENT_ID</code> and{' '}
-              <code className="sd-numeral">STRAVA_CLIENT_SECRET</code> — from your Strava API app
+              <code className="sd-numeral">STRAVA_CLIENT_SECRET</code>, from your Strava API app
             </li>
             <li>
-              <code className="sd-numeral">CRON_SECRET</code> — bearer token for the daily sync route
+              <code className="sd-numeral">CRON_SECRET</code>: bearer token for the daily sync route
             </li>
             <li>
-              <code className="sd-numeral">SUPABASE_SERVICE_ROLE_KEY</code> — server-only; lets the
+              <code className="sd-numeral">SUPABASE_SERVICE_ROLE_KEY</code>: server-only; lets the
               scheduled cron write activities without an owner session
             </li>
             <li>
-              Optional <code className="sd-numeral">STRAVA_REDIRECT_URI</code> — defaults to{' '}
+              Optional <code className="sd-numeral">STRAVA_REDIRECT_URI</code>: defaults to{' '}
               <code className="sd-numeral">&lt;origin&gt;/api/strava/callback</code> (works with
               localhost)
             </li>
@@ -272,7 +272,7 @@ export default async function StravaAdminPage({
             </div>
           </Panel>
 
-          {/* Unmatched — needs manual linking */}
+          {/* Unmatched, needs manual linking */}
           <section>
             <h2 className="mb-2 text-sm font-semibold text-sd-ink">
               Unmatched{' '}

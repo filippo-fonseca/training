@@ -1,6 +1,6 @@
 // Static fixture for /progress, derived verbatim from supabase/seed.sql (plan
 // baystate-2026). Used only when the live database is unreachable. Logs are
-// empty — the genuine current state, since the plan starts 2026-07-13 and no
+// empty, the genuine current state, since the plan starts 2026-07-13 and no
 // sessions have been logged. This drives the empty/partial-data rendering path.
 
 import type { Plan } from "@/lib/db";
@@ -37,7 +37,7 @@ export const FIXTURE_WEEKLY: WeeklyKm[] = PLANNED.map((planned, i) => {
     endDate: WEEK_ENDS[i],
     phaseLabel: PHASE_LABELS[i],
     plannedKm: planned,
-    actualKm: null, // no logs yet — the empty state
+    actualKm: null, // no logs yet: the empty state
     loggedDays: 0,
     isCutback: weekIndex === 6 || weekIndex === 9,
     isTaper: weekIndex === 13,
