@@ -7,6 +7,7 @@
 
 import type { StravaActivity } from '@/lib/types/database';
 import { nyCalendarDate } from '@/lib/strava/match';
+import { englishTitle } from '@/lib/strava/title';
 import { formatDate } from '@/app/admin/_lib/format';
 
 interface StravaLinkPickerProps {
@@ -90,7 +91,7 @@ export function StravaLinkPicker({ sessionId, dayDate, activities, linkedIds }: 
                 />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-xs font-medium text-sd-ink">
-                    {a.name ?? 'Activity'}
+                    {englishTitle(a.name) ?? 'Activity'}
                   </span>
                   <span className="flex flex-wrap gap-x-2 text-tiny text-sd-ink-faint">
                     {meta.map((m, i) => (

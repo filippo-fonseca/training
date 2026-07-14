@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StatusPill } from '@/components/ui/status-pill';
 import type { StravaActivity, StravaConnection } from '@/lib/types/database';
 import { getConnection, getActivities, isStravaConfigured } from '@/lib/strava';
+import { englishTitle } from '@/lib/strava/title';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
 import { linkActivity, unlinkActivity, disconnect } from './actions';
 import { SyncNowButton } from './_components/sync-now';
@@ -291,7 +292,7 @@ export default async function StravaAdminPage({
                   <Panel key={a.id} className="sd-enter p-4" style={staggerStyle(i)}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm text-sd-ink">{a.name ?? 'Activity'}</p>
+                        <p className="truncate text-sm text-sd-ink">{englishTitle(a.name) ?? 'Activity'}</p>
                         <ActivityMeta a={a} />
                       </div>
                       <form action={linkActivity} className="flex items-center gap-2">
@@ -338,7 +339,7 @@ export default async function StravaAdminPage({
                     <Panel key={a.id} className="sd-enter p-4" style={staggerStyle(i)}>
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-sd-ink">{a.name ?? 'Activity'}</p>
+                          <p className="truncate text-sm text-sd-ink">{englishTitle(a.name) ?? 'Activity'}</p>
                           <ActivityMeta a={a} />
                           {day ? (
                             <p className="mt-1 text-tiny text-sd-ink-faint">
