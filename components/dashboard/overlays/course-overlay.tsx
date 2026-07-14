@@ -1,12 +1,16 @@
 import type { PublicPlan } from "@/components/journey/journey-model";
 import { formatLongDate } from "@/components/journey/journey-time";
 import { CourseSvg } from "../course-svg";
+import { InteractiveCourseMap } from "../interactive-course-map";
+import { mapsEnabled } from "../course-map-config";
 import { OverlayHeader, OverlayFooter, OverlaySection, overlayTitleId } from "./overlay-chrome";
+
+const GARMIN_COURSE_URL = "https://connect.garmin.com/modern/course/128994217";
 
 /** A hand-built, deliberately gentle elevation strip (Baystate is flat/paved). */
 function ElevationStrip() {
   return (
-    <svg viewBox="0 0 400 70" className="h-16 w-full" role="img" aria-label="Stylized elevation profile: a flat, paved course with only gentle bridge rises.">
+    <svg viewBox="0 0 400 70" className="h-16 w-full" role="img" aria-label="Approximate elevation profile: a flat, paved course with only gentle bridge rises.">
       <defs>
         <linearGradient id="elev-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--sd-accent)" stopOpacity={0.28} />
@@ -37,7 +41,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** The Course expand: the full course diagram, an elevation strip, and facts. */
+/** The Course expand: the full course map, an elevation strip, and facts. */
 export function CourseOverlay({ plan }: { plan: PublicPlan }) {
   return (
     <div className="flex flex-col gap-6">
@@ -45,19 +49,23 @@ export function CourseOverlay({ plan }: { plan: PublicPlan }) {
         eyebrow="Target course · Baystate Half · Lowell, MA"
         title="The course"
         titleId={overlayTitleId("course")}
-        subtitle="A stylized diagram of the out-and-back along the Merrimack River. It marks the shape, the turnaround, and the kilometre splits; it is not a geographic map."
+        subtitle="The real Baystate Half loop along the Merrimack River, run twice: west across the Rourke Bridge and back across the Aiken Street Bridge, past LeLacheur Park to the Tsongas Center."
       />
 
-      <div className="rounded-sd-card border border-sd-line bg-sd-darker-box/50 p-4">
-        <CourseSvg className="h-auto w-full" />
-      </div>
+      {mapsEnabled ? (
+        <InteractiveCourseMap className="h-[clamp(240px,42vh,420px)] w-full overflow-hidden rounded-sd-card border border-sd-line bg-sd-darker-box" />
+      ) : (
+        <div className="rounded-sd-card border border-sd-line bg-sd-darker-box/50 p-4">
+          <CourseSvg className="h-auto w-full" variant="detail" />
+        </div>
+      )}
 
-      <OverlaySection title="Elevation">
+      <OverlaySection title="Elevation (approximate)">
         <div className="rounded-sd-card border border-sd-line bg-sd-box/40 p-4">
           <ElevationStrip />
           <p className="mt-2 text-xs text-sd-ink-dull">
             Flat and paved, with only gentle bridge rises. A course that rewards
-            even pacing rather than surging.
+            even pacing rather than surging. Profile is approximate.
           </p>
         </div>
       </OverlaySection>
@@ -77,7 +85,22 @@ export function CourseOverlay({ plan }: { plan: PublicPlan }) {
         </div>
       </OverlaySection>
 
-      <OverlayFooter />
+      <p className="font-mono text-[10px] tracking-wide text-sd-ink-faint">
+        Trace (c) OpenStreetMap contributors
+      </p>
+
+      <OverlayFooter
+        extra={
+          <a
+            href={GARMIN_COURSE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs font-medium text-sd-accent transition-colors hover:text-sd-accent-faint"
+          >
+            Official course on Garmin Connect
+          </a>
+        }
+      />
     </div>
   );
 }
