@@ -20,6 +20,7 @@ import type {
   SessionLog,
   StravaActivity,
 } from '@/lib/types/database';
+import { englishTitle } from '@/lib/strava/title';
 
 /** Base URL for a public Strava activity page. */
 const STRAVA_ACTIVITY_BASE = 'https://www.strava.com/activities';
@@ -54,7 +55,9 @@ export interface ActivityEvidence {
 export function toActivityEvidence(a: StravaActivity): ActivityEvidence {
   return {
     stravaId: a.strava_id,
-    name: a.name,
+    // Display-only: translate Strava's localized auto-generated default titles
+    // to English at this single curated projection seam (stored data untouched).
+    name: englishTitle(a.name),
     photoUrl: a.photo_url,
     distanceM: a.distance_m,
     movingTimeS: a.moving_time_s,
