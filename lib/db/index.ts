@@ -1,6 +1,7 @@
 // Typed data-access layer for the training tracker. Import from here.
 export * from './client';
 export * from './queries';
+export * from './progress';
 export type {
   Database,
   Json,
