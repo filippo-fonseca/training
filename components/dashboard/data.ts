@@ -24,6 +24,7 @@ import {
   daysBetween,
   formatShortDate,
 } from "@/components/journey/journey-time";
+import { nyCalendarDate } from "@/lib/strava/match";
 import { loadStats, type StatsPageData } from "@/app/(public)/stats/_data";
 import { loadProgress, type ProgressData } from "@/app/(public)/progress/_data";
 import { getAnonClient } from "@/components/calendar/data";
@@ -305,11 +306,15 @@ export function timeLabel(movingTimeS: number | null): string | null {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-/** A short calendar label like "Oct 18" from an activity's ISO start date. */
+/** A short calendar label like "Oct 18" from an activity's ISO start timestamp.
+ *  start_date is a full UTC instant, so resolve its calendar day in the app
+ *  display timezone (America/New_York) BEFORE formatting, mirroring how the
+ *  public status API derives its day. Slicing the raw UTC date would show the
+ *  next day for a late-evening EDT run (stored past midnight UTC). */
 export function activityDateShort(startDate: string | null): string | null {
   if (!startDate) return null;
-  // start_date may be a full ISO timestamp; take the date portion.
-  const iso = startDate.slice(0, 10);
+  const iso = nyCalendarDate(startDate);
+  if (!iso) return null;
   try {
     return formatShortDate(iso, RACE_TIMEZONE);
   } catch {
