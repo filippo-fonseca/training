@@ -47,3 +47,34 @@ export async function getPlanOrNull(planId: string): Promise<Plan | null> {
   if (error) throw new Error(`getPlanOrNull(${planId}): ${error.message}`);
   return data ?? null;
 }
+
+export interface PlanCounts {
+  phases: number;
+  weeks: number;
+  days: number;
+  milestones: number;
+  checkpoints: number;
+}
+
+const COUNT_TABLES = [
+  ['phases', 'plan_phases'],
+  ['weeks', 'plan_weeks'],
+  ['days', 'plan_days'],
+  ['milestones', 'milestones'],
+  ['checkpoints', 'checkpoints'],
+] as const;
+
+/** Exact row counts per child table for a plan (owner context). */
+export async function getPlanCounts(planId: string): Promise<PlanCounts> {
+  const supabase = await createServerSupabaseClient();
+  const results = await Promise.all(
+    COUNT_TABLES.map(([, table]) =>
+      supabase.from(table).select('*', { count: 'exact', head: true }).eq('plan_id', planId),
+    ),
+  );
+  const counts = {} as PlanCounts;
+  COUNT_TABLES.forEach(([key], i) => {
+    counts[key] = results[i].count ?? 0;
+  });
+  return counts;
+}
