@@ -1,5 +1,5 @@
 /**
- * bake-course.mjs — one-time, reproducible acquisition of the REAL Baystate
+ * bake-course.mjs: one-time, reproducible acquisition of the REAL Baystate
  * Half Marathon course trace, baked to data/course/baystate-half.json.
  *
  * The app makes ZERO runtime external requests: this script runs at authoring
