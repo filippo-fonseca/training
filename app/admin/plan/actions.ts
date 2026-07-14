@@ -111,12 +111,22 @@ export async function upsertPhase(planId: string, _prev: ActionResult, fd: FormD
   if (!name) return fail('A phase name is required.');
   if (phaseIndex === null) return fail('A phase order index is required.');
 
+  // Phases are date-ranged (migration 0008): weeks auto-match by date
+  // containment, so the editor sets a date window, not week indices. Guard the
+  // window (end on or after start). Overlaps are allowed but flagged read-only
+  // in the editor, never blocked here.
+  const startDate = str(fd, 'start_date');
+  const endDate = str(fd, 'end_date');
+  if (startDate && endDate && endDate < startDate) {
+    return fail('The phase end date must be on or after its start date.');
+  }
+
   const payload = {
     plan_id: planId,
     phase_index: phaseIndex,
     name,
-    start_week: int(fd, 'start_week'),
-    end_week: int(fd, 'end_week'),
+    start_date: startDate,
+    end_date: endDate,
     description: str(fd, 'description'),
   };
   const { error } = id
