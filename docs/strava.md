@@ -56,8 +56,53 @@ A matched activity's **Log draft** link hands its distance / moving time / pace 
 HR to `/admin/log` as query params to prefill a session log (owned by the session
 logging unit).
 
+## Session evidence (linking activities to sessions)
+
+Beyond day matching, activities can be linked to a **plan session** as proof it
+was done. Links live in `session_activity_links` (migration 0007): a
+many-to-many join between `day_sessions` and `strava_activities`, public
+SELECT / owner-only writes, so a track day's several activities can all attach
+to one session.
+
+Semantics (derived in `lib/derive/session-evidence.ts`, used by every surface):
+
+- A session with **one or more linked activities is done**, everywhere status is
+  computed (day page, calendar, progress, public APIs).
+- The session's **actual distance and time are the cumulative totals** across
+  its linked activities, never manually entered.
+- A manual `session_logs` row remains the **fallback** when nothing is linked;
+  linked evidence always takes precedence over it.
+- Public surfaces receive only the curated evidence projection (title, photo,
+  distance, time, strava id, outbound link); the raw API payload never crosses
+  into public props.
+
+The owner links/unlinks on `/admin/log`: each day row has a "Strava evidence"
+picker listing synced activities date-proximate first, with multi-select
+checkboxes. The public `/day/[date]` page then renders a verification block per
+linked activity: the activity photo (when it has one), its title, and an
+outbound link to `https://www.strava.com/activities/<id>`.
+
+### Photos and rate limits
+
+The activities **list** endpoint usually omits photo URLs, and Strava's API rate
+limits are tight (200 requests / 15 min, 2,000 / day on a default app). Fetching
+`GET /activities/{id}` for every synced activity just in case would burn the
+budget, so the photo strategy is deliberate:
+
+- The bulk sync stores summary fields only. When a summary does happen to carry
+  `photos.primary.urls`, the largest URL is captured via a targeted,
+  non-clobbering update (never nulling an existing photo on re-sync).
+- The one-time **detail fetch happens at link time**: when the owner links an
+  activity to a session, `backfillActivityPhoto` fetches that activity's detail
+  once to pull `photos.primary`, so a detail request is spent per **linked**
+  activity, not per synced one. Unlinks and re-saves cost nothing.
+- Photo backfill is best-effort: a rate-limited or photo-less activity never
+  fails the link, and the evidence UI renders a placeholder when no photo
+  exists.
+
 ## Tests
 
-`npm run test` runs the pure-logic unit tests (matching + OAuth URL) with mocked
-inputs: no network or DB. Live-verify the full OAuth + sync path once real Strava
-credentials are configured.
+`npm run test` runs the pure-logic unit tests (matching + OAuth URL + the
+session-evidence derivation: cumulative totals and evidence-over-log precedence)
+with mocked inputs: no network or DB. Live-verify the full OAuth + sync path once
+real Strava credentials are configured.

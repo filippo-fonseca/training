@@ -620,6 +620,7 @@ export interface Database {
           max_heartrate: number | null;
           total_elevation_gain: number | null;
           map_polyline: string | null;
+          photo_url: string | null;
           raw: Json | null;
           created_at: string;
           updated_at: string;
@@ -640,6 +641,7 @@ export interface Database {
           max_heartrate?: number | null;
           total_elevation_gain?: number | null;
           map_polyline?: string | null;
+          photo_url?: string | null;
           raw?: Json | null;
           created_at?: string;
           updated_at?: string;
@@ -656,6 +658,38 @@ export interface Database {
             foreignKeyName: 'strava_activities_plan_day_id_fkey';
             columns: ['plan_day_id'];
             referencedRelation: 'plan_days';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      // CURATED (public SELECT, owner-only writes): links a plan session to a
+      // synced Strava activity as verified evidence. Many-to-many; unique per
+      // (day_session_id, strava_activity_id).
+      session_activity_links: {
+        Row: {
+          id: string;
+          day_session_id: string;
+          strava_activity_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          day_session_id: string;
+          strava_activity_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['session_activity_links']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'session_activity_links_day_session_id_fkey';
+            columns: ['day_session_id'];
+            referencedRelation: 'day_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'session_activity_links_strava_activity_id_fkey';
+            columns: ['strava_activity_id'];
+            referencedRelation: 'strava_activities';
             referencedColumns: ['id'];
           },
         ];
@@ -701,4 +735,6 @@ export type HealthEntry = PublicTables['health_entries']['Row'];
 export type HealthEntryInsert = PublicTables['health_entries']['Insert'];
 export type StravaConnection = PublicTables['strava_connections']['Row'];
 export type StravaActivity = PublicTables['strava_activities']['Row'];
+export type SessionActivityLink = PublicTables['session_activity_links']['Row'];
+export type SessionActivityLinkInsert = PublicTables['session_activity_links']['Insert'];
 export type AppSetting = PublicTables['app_settings']['Row'];

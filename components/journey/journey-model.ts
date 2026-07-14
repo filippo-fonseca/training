@@ -15,6 +15,7 @@ import type {
   SessionLog,
   DayDetail,
 } from "@/lib/db";
+import { effectiveActual, type ActivityEvidence, type EffectiveActual } from "@/lib/derive";
 import { countdown, daysBetween, type Countdown } from "./journey-time";
 
 /**
@@ -72,6 +73,9 @@ export interface JourneyBundle {
   weekDays: PlanDay[];
   /** Session logs indexed by plan_day_id (public read; may be empty). */
   logsByDayId: Record<string, SessionLog>;
+  /** Linked Strava evidence indexed by plan_day_id (public-safe projection).
+   *  Optional so fixtures and older callers need no change; empty = no links. */
+  evidenceByDayId?: Record<string, ActivityEvidence[]>;
   /** Whether this bundle came from the live database or the local fixture. */
   source: "live" | "fixture";
 }
@@ -128,6 +132,10 @@ export interface JourneyView {
   planProgress: number;
   session: TodaySession;
   todayLog: SessionLog | null;
+  /** Linked Strava activities for today (evidence; empty when none). */
+  todayEvidence: ActivityEvidence[];
+  /** Today's resolved actual after evidence precedence (lib/derive). */
+  todayActual: EffectiveActual;
   week: WeekSnapshot;
   nextMilestone: NextMilestone | null;
 }
@@ -165,6 +173,7 @@ function milestoneDate(m: Milestone, weeks: PlanWeek[]): string | null {
 
 export function computeView(bundle: JourneyBundle, todayISO: string): JourneyView {
   const { plan, phases, weeks, milestones, todayDetail, weekDays, logsByDayId } = bundle;
+  const evidenceByDayId = bundle.evidenceByDayId ?? {};
 
   const race: RaceInfo = {
     name: plan.race_name ?? plan.title,
@@ -224,16 +233,19 @@ export function computeView(bundle: JourneyBundle, todayISO: string): JourneyVie
   };
 
   const todayLog = todayDetail ? logsByDayId[todayDetail.day.id] ?? null : null;
+  const todayEvidence = todayDetail ? evidenceByDayId[todayDetail.day.id] ?? [] : [];
+  const todayActual = effectiveActual(todayEvidence, todayLog);
 
-  // Weekly km snapshot: planned ceiling vs what has been logged so far.
+  // Weekly km snapshot: planned ceiling vs the effective actuals so far (linked
+  // Strava evidence per day wins; the manual log is the fallback, per lib/derive).
   let loggedKm = 0;
   let plannedToDateKm = 0;
   let hasLogs = false;
   for (const d of weekDays) {
     if (d.date <= todayISO) plannedToDateKm += d.planned_run_km ?? 0;
-    const log = logsByDayId[d.id];
-    if (log && log.actual_distance_km != null) {
-      loggedKm += log.actual_distance_km;
+    const actual = effectiveActual(evidenceByDayId[d.id] ?? [], logsByDayId[d.id] ?? null);
+    if (actual.distanceKm != null) {
+      loggedKm += actual.distanceKm;
       hasLogs = true;
     }
   }
@@ -278,6 +290,8 @@ export function computeView(bundle: JourneyBundle, todayISO: string): JourneyVie
     planProgress,
     session,
     todayLog,
+    todayEvidence,
+    todayActual,
     week,
     nextMilestone,
   };

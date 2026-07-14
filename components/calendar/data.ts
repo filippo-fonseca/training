@@ -16,6 +16,8 @@ import {
   getLogsForPlan,
   getDay,
   getLogForDay,
+  getStravaActivities,
+  getActivityLinksForSessions,
   type TypedSupabaseClient,
 } from '@/lib/db';
 import type {
@@ -27,6 +29,11 @@ import type {
   Milestone,
   SessionLog,
 } from '@/lib/types/database';
+import {
+  evidenceById,
+  groupEvidenceByDay,
+  type ActivityEvidence,
+} from '@/lib/derive';
 import { deriveStatus, type DayStatus } from './status';
 import { addDays, todayInNewYork, type ISODate } from './date-utils';
 
@@ -52,6 +59,8 @@ export interface CalendarDay {
   primary: DaySession | null;
   secondary: DaySession | null;
   log: SessionLog | null;
+  /** Linked Strava activities across the day's sessions (evidence). */
+  evidence: ActivityEvidence[];
   status: DayStatus;
 }
 
@@ -87,7 +96,9 @@ export async function getCalendarData(
 
     const primaryByDay = new Map<string, DaySession>();
     const secondaryByDay = new Map<string, DaySession>();
+    const sessionDay = new Map<string, string>();
     for (const s of sessions) {
+      sessionDay.set(s.id, s.plan_day_id);
       if (s.slot === 'primary') primaryByDay.set(s.plan_day_id, s);
       else secondaryByDay.set(s.plan_day_id, s);
     }
@@ -95,17 +106,26 @@ export async function getCalendarData(
     const logByDay = new Map<string, SessionLog>();
     for (const log of logs) logByDay.set(log.plan_day_id, log);
 
+    // Linked Strava evidence grouped by plan day (public read; may be empty).
+    const [links, activities] = await Promise.all([
+      getActivityLinksForSessions(client, [...sessionDay.keys()]),
+      getStravaActivities(client),
+    ]);
+    const evidenceByDay = groupEvidenceByDay(links, evidenceById(activities), sessionDay);
+
     const today = todayInNewYork();
     const daysByDate = new Map<ISODate, CalendarDay>();
     for (const day of days) {
       const primary = primaryByDay.get(day.id) ?? null;
       const log = logByDay.get(day.id) ?? null;
+      const evidence = evidenceByDay.get(day.id) ?? [];
       daysByDate.set(day.date, {
         day,
         primary,
         secondary: secondaryByDay.get(day.id) ?? null,
         log,
-        status: deriveStatus(primary?.category ?? null, day.date, today, log),
+        evidence,
+        status: deriveStatus(primary?.category ?? null, day.date, today, log, evidence.length),
       });
     }
 
@@ -162,6 +182,8 @@ export interface DayData {
   alternatives: DayAlternative[];
   milestones: Milestone[];
   log: SessionLog | null;
+  /** Linked Strava activities across the day's sessions (evidence). */
+  evidence: ActivityEvidence[];
   status: DayStatus;
   today: ISODate;
   prevDate: ISODate | null;
@@ -199,11 +221,17 @@ export async function getDayData(
   const primary = sessions.find((s) => s.slot === 'primary') ?? null;
   const secondary = sessions.find((s) => s.slot === 'secondary') ?? null;
 
-  const [weeks, milestones, log] = await Promise.all([
+  const [weeks, milestones, log, links, activities] = await Promise.all([
     getWeeks(client, plan.id).catch(() => [] as PlanWeek[]),
     getMilestones(client, plan.id).catch(() => [] as Milestone[]),
     getLogForDay(client, day.id).catch(() => null),
+    getActivityLinksForSessions(client, sessions.map((s) => s.id)).catch(() => []),
+    getStravaActivities(client).catch(() => []),
   ]);
+
+  const sessionDay = new Map(sessions.map((s) => [s.id, day.id] as const));
+  const evidenceByDay = groupEvidenceByDay(links, evidenceById(activities), sessionDay);
+  const evidence = evidenceByDay.get(day.id) ?? [];
 
   const week = weeks.find((w) => w.id === day.week_id) ?? null;
   const dayMilestones = milestones.filter((m) => m.date === date);
@@ -218,7 +246,8 @@ export async function getDayData(
     alternatives,
     milestones: dayMilestones,
     log,
-    status: deriveStatus(primary?.category ?? null, date, today, log),
+    evidence,
+    status: deriveStatus(primary?.category ?? null, date, today, log, evidence.length),
     today,
     prevDate:
       plan.start_date && date > plan.start_date

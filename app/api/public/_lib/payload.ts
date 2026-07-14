@@ -6,7 +6,7 @@
  * as `toPublicPlan`, sealed decision D1). Health data (health_entries,
  * symptom-gated alternatives, Strava tokens) never enters this file.
  */
-import type { DaySession, PlanDay, SessionLog, TrafficLight } from "@/lib/db";
+import type { DaySession, PlanDay, TrafficLight } from "@/lib/db";
 import type { JourneyView } from "@/components/journey/journey-model";
 
 export type PublicStatus = "rest" | "planned" | "logged" | "missed";
@@ -62,14 +62,16 @@ export interface PublicStatusResponse {
 /**
  * Derived from the same signals the journey page's status pill uses (see
  * `today-card.tsx`), collapsed to the four public states. No plan day
- * scheduled, or an explicit rest day, both read as "rest"; a log with
- * `completed: false` reads as "missed" rather than "logged".
+ * scheduled, or an explicit rest day, both read as "rest". Evidence precedence
+ * applies (lib/derive): >= 1 linked Strava activity reads as "logged" (done)
+ * regardless of the manual log; a log-only day with `completed: false` reads
+ * as "missed" rather than "logged".
  */
 export function deriveStatus(view: JourneyView): PublicStatus {
-  const { session, todayLog } = view;
+  const { session, todayActual } = view;
   if (!session.day || session.isRest) return "rest";
-  if (todayLog) return todayLog.completed ? "logged" : "missed";
-  return "planned";
+  if (todayActual.source === "none") return "planned";
+  return todayActual.done ? "logged" : "missed";
 }
 
 function toPublicSession(session: DaySession, day: PlanDay): PublicSession {
@@ -87,17 +89,25 @@ function toPublicSession(session: DaySession, day: PlanDay): PublicSession {
   };
 }
 
-function toLoggedSummary(log: SessionLog): PublicLoggedSummary {
+/**
+ * The public "actual" summary after evidence precedence: distance/duration are
+ * the cumulative Strava totals when activities are linked, else the manual
+ * log's values. Pace and traffic light remain log-only (curated fields; the
+ * evidence carries no pace). Null when neither evidence nor a log exists.
+ */
+function toLoggedSummary(view: JourneyView): PublicLoggedSummary | null {
+  const { todayActual, todayLog } = view;
+  if (todayActual.source === "none") return null;
   return {
-    distance_km: log.actual_distance_km,
-    duration_min: log.actual_duration_min,
-    pace: log.actual_pace_text,
-    status: log.traffic_light,
+    distance_km: todayActual.distanceKm,
+    duration_min: todayActual.durationMin,
+    pace: todayLog?.actual_pace_text ?? null,
+    status: todayLog?.traffic_light ?? null,
   };
 }
 
 export function buildTodayPayload(view: JourneyView): PublicTodayResponse {
-  const { session, todayLog, race } = view;
+  const { session, race } = view;
   const sessions = session.day
     ? [session.primary, session.secondary]
         .filter((s): s is DaySession => s != null)
@@ -117,7 +127,7 @@ export function buildTodayPayload(view: JourneyView): PublicTodayResponse {
     countdown_days: race.countdown.days,
     sessions,
     status: deriveStatus(view),
-    logged: todayLog ? toLoggedSummary(todayLog) : null,
+    logged: toLoggedSummary(view),
   };
 }
 

@@ -6,6 +6,7 @@ import { SessionDetail } from '@/components/calendar/session-detail';
 import { Alternatives } from '@/components/calendar/alternatives';
 import { MilestoneBadges } from '@/components/calendar/milestone-badges';
 import { LoggedVsPlan } from '@/components/calendar/logged-vs-plan';
+import { SessionEvidence } from '@/components/calendar/session-evidence';
 import { STATUS_META } from '@/components/calendar/status';
 import {
   isISODate,
@@ -51,7 +52,7 @@ export default async function DayPage({ params }: PageProps) {
   }
   if (data === null) notFound();
 
-  const { day, week, primary, secondary, alternatives, milestones, log, status } = data;
+  const { day, week, primary, secondary, alternatives, milestones, log, evidence, status } = data;
   const statusMeta = STATUS_META[status];
   const backHref = `/calendar?month=${monthKey(date)}`;
 
@@ -129,10 +130,17 @@ export default async function DayPage({ params }: PageProps) {
         </div>
       ) : null}
 
-      {/* Logged result */}
-      {log ? (
+      {/* Actual result: linked Strava evidence wins, manual log is the fallback */}
+      {log || evidence.length > 0 ? (
         <div className="sd-enter" style={staggerStyle(4)}>
-          <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} />
+          <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} evidence={evidence} />
+        </div>
+      ) : null}
+
+      {/* Strava verification badge(s): photo, title, outbound link */}
+      {evidence.length > 0 ? (
+        <div className="sd-enter" style={staggerStyle(5)}>
+          <SessionEvidence evidence={evidence} />
         </div>
       ) : null}
     </DayFrame>

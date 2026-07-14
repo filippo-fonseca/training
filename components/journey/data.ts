@@ -14,11 +14,13 @@ import {
   getLogsForPlan,
   getWeekWithDays,
   getDay,
+  getEvidenceByDay,
   type TypedSupabaseClient,
   type PlanDay,
   type SessionLog,
   type DayDetail,
 } from "@/lib/db";
+import type { ActivityEvidence } from "@/lib/derive";
 import {
   computeView,
   findCurrentWeek,
@@ -54,11 +56,12 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
     // anything derived from `plan` can cross into the view model / RSC payload.
     const rawPlan = await getPlan(client);
     const plan = toPublicPlan(rawPlan);
-    const [phases, weeks, milestones, logs] = await Promise.all([
+    const [phases, weeks, milestones, logs, evidence] = await Promise.all([
       getPhases(client, rawPlan.id),
       getWeeks(client, rawPlan.id),
       getMilestones(client, rawPlan.id),
       getLogsForPlan(client, rawPlan.id),
+      getEvidenceByDay(client, rawPlan.id),
     ]);
 
     // Days of the week that contains today, for the weekly snapshot.
@@ -81,6 +84,9 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
     const logsByDayId: Record<string, SessionLog> = {};
     for (const l of logs) logsByDayId[l.plan_day_id] = l;
 
+    const evidenceByDayId: Record<string, ActivityEvidence[]> = {};
+    for (const [dayId, list] of evidence) evidenceByDayId[dayId] = list;
+
     return {
       plan,
       phases,
@@ -89,6 +95,7 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
       todayDetail,
       weekDays,
       logsByDayId,
+      evidenceByDayId,
       source: "live",
     };
   } catch (err) {

@@ -180,3 +180,31 @@ export async function setActivityPlanDayById(
     .eq('id', id);
   if (error) throw new StravaDbError('setActivityPlanDayById', error);
 }
+
+/** A single activity by row id, or null. */
+export async function getActivityById(
+  client: TypedSupabaseClient,
+  id: string,
+): Promise<StravaActivity | null> {
+  const { data, error } = await client
+    .from('strava_activities')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new StravaDbError('getActivityById', error);
+  return data;
+}
+
+/** Set an activity's primary photo URL, by strava_id. Never clears an existing
+ *  photo (only writes a non-null url), so a re-sync cannot drop it. */
+export async function setActivityPhotoByStravaId(
+  client: TypedSupabaseClient,
+  stravaId: number,
+  photoUrl: string,
+): Promise<void> {
+  const { error } = await client
+    .from('strava_activities')
+    .update({ photo_url: photoUrl, updated_at: new Date().toISOString() })
+    .eq('strava_id', stravaId);
+  if (error) throw new StravaDbError('setActivityPhotoByStravaId', error);
+}

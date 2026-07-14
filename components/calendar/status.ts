@@ -59,8 +59,10 @@ export const STATUS_META: Record<DayStatus, StatusMeta> = {
 };
 
 /**
- * Derive a day's status from its primary category, an optional log, and today.
- * Precedence: rest day → rest; then a recorded log (modified→alternative-used,
+ * Derive a day's status from its primary category, linked Strava evidence, an
+ * optional log, and today. Precedence: rest day → rest; then linked activities
+ * (>= 1 means DONE, so → logged, taking precedence over the manual log per the
+ * evidence spec); then a recorded log (modified→alternative-used,
  * completed→logged, otherwise→missed); an un-logged past day → missed; else
  * planned. `today` and `date` are compared as ISO strings (lexicographic ==
  * chronological for 'YYYY-MM-DD').
@@ -70,8 +72,10 @@ export function deriveStatus(
   date: ISODate,
   today: ISODate,
   log: SessionLog | null | undefined,
+  linkedCount = 0,
 ): DayStatus {
   if (category === 'rest') return 'rest';
+  if (linkedCount >= 1) return 'logged';
   if (log) {
     if (log.modified) return 'alternative-used';
     if (log.completed) return 'logged';
