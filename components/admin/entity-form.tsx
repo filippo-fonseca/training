@@ -49,7 +49,7 @@ export function EntityForm({ action, children, submitLabel = 'Save', aside, clas
           </span>
         ) : null}
         {state.ok && state.saved ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-sd-ink-dull">
+          <span className="sd-enter inline-flex items-center gap-1.5 text-xs text-sd-ink-dull">
             <span className="size-1.5 rounded-full" style={{ background: 'var(--ink-sage)' }} />
             Saved
           </span>

@@ -25,7 +25,7 @@ export function Panel({
       className={cn(
         "sd-panel",
         padded && "p-5",
-        interactive && "sd-soft-hover hover:border-sd-selected",
+        interactive && "sd-card-hover",
         className,
       )}
       {...props}

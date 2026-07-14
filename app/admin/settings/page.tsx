@@ -37,7 +37,7 @@ export default async function SettingsPage() {
 
       <Panel className="p-5">
         <Row label="Signed in as" value={email} />
-        <Row label="Admin email" value={settings.admin_email ?? '—'} />
+        <Row label="Admin email" value={settings.admin_email ?? '--'} />
         <Row label="Timezone" value={settings.timezone ?? 'America/New_York'} />
       </Panel>
 

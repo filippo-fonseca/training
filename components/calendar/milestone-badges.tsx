@@ -2,6 +2,7 @@ import { Panel } from '@/components/ui/panel';
 import { TrophyGlyph } from '@/components/ui/icons';
 import type { Milestone, MilestoneType } from '@/lib/types/database';
 import { accentChip, gateHue, chip } from './status';
+import { staggerStyle } from '@/lib/design/motion';
 
 const TYPE_LABEL: Record<MilestoneType, string> = {
   decision_checkpoint: 'Decision checkpoint',
@@ -23,7 +24,7 @@ export function MilestoneBadges({ milestones }: { milestones: Milestone[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      {milestones.map((m) => {
+      {milestones.map((m, i) => {
         const isRace = m.type === 'race';
         const criteria = [
           { gate: 'green' as const, text: m.green_criteria },
@@ -35,11 +36,11 @@ export function MilestoneBadges({ milestones }: { milestones: Milestone[] }) {
           <Panel
             key={m.id}
             padded
-            className="flex flex-col gap-3"
+            className="sd-enter flex flex-col gap-3"
             style={
               isRace
-                ? { boxShadow: 'var(--sd-bevel), 0 0 28px var(--hud-cyan-glow)' }
-                : undefined
+                ? { boxShadow: 'var(--sd-bevel), 0 0 28px var(--hud-cyan-glow)', ...staggerStyle(i) }
+                : staggerStyle(i)
             }
           >
             <div className="flex items-center gap-2.5">

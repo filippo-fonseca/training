@@ -6,6 +6,7 @@ import type {
   TextareaHTMLAttributes,
 } from 'react';
 import { cn } from '@/lib/design/cn';
+import { ChevronRightGlyph } from '@/components/admin/icons';
 
 /**
  * Admin form primitives in the spacedrivey grammar: --sd-input fill, 1px --sd-line
@@ -16,8 +17,9 @@ import { cn } from '@/lib/design/cn';
 
 const CONTROL_BASE =
   'w-full rounded-sd-chrome border border-sd-line bg-sd-input px-3 py-2 text-sm text-sd-ink ' +
-  'placeholder:text-sd-ink-faint transition-colors duration-150 ' +
-  'hover:border-sd-selected disabled:cursor-not-allowed disabled:opacity-50';
+  'placeholder:text-sd-ink-faint transition-[color,background-color,border-color,box-shadow] duration-150 ' +
+  'hover:border-[color-mix(in_srgb,var(--sd-accent)_28%,var(--sd-line))] ' +
+  'disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Tiny mono uppercase label, matching .sd-stat-label. */
 export interface FieldLabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
@@ -80,9 +82,18 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 
 export function Select({ className, children, ...props }: SelectProps) {
   return (
-    <select className={cn(CONTROL_BASE, 'appearance-none pr-8', className)} {...props}>
-      {children}
-    </select>
+    <div className="relative">
+      <select className={cn(CONTROL_BASE, 'appearance-none pr-9', className)} {...props}>
+        {children}
+      </select>
+      {/* Chevron affordance so the control never reads as an OS-default select. */}
+      <ChevronRightGlyph
+        aria-hidden
+        width={14}
+        height={14}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-sd-ink-faint"
+      />
+    </div>
   );
 }
 

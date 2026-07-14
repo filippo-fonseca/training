@@ -27,7 +27,7 @@ export function SyncNowButton() {
     <form action={formAction} className="flex items-center gap-3">
       <Submit />
       {state ? (
-        <span className="text-xs text-sd-ink-faint" role="status">
+        <span className="sd-enter text-xs text-sd-ink-faint" role="status">
           {summarize(state)}
         </span>
       ) : null}

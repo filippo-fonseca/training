@@ -13,6 +13,7 @@ import {
   monthKey,
   shortDateLabel,
 } from '@/components/calendar/date-utils';
+import { staggerStyle } from '@/lib/design/motion';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,7 @@ export default async function DayPage({ params }: PageProps) {
   return (
     <DayFrame backHref={backHref}>
       {/* Header */}
-      <header className="flex flex-col gap-3">
+      <header className="sd-enter flex flex-col gap-3" style={staggerStyle(0)}>
         <div className="flex items-center justify-between gap-3">
           <span className="sd-stat-label">
             {day.weekday ?? ''} · Day {day.day_index}/98
@@ -100,26 +101,40 @@ export default async function DayPage({ params }: PageProps) {
       </header>
 
       {/* Milestones */}
-      <MilestoneBadges milestones={milestones} />
+      {milestones.length > 0 ? (
+        <div className="sd-enter" style={staggerStyle(1)}>
+          <MilestoneBadges milestones={milestones} />
+        </div>
+      ) : null}
 
       {/* Primary session */}
-      {primary ? (
-        <SessionDetail
-          session={primary}
-          slot="primary"
-          alternatives={alternatives.length > 0 ? <Alternatives alternatives={alternatives} /> : undefined}
-        />
-      ) : (
-        <p className="rounded-sd-card border border-sd-line bg-sd-box/40 px-5 py-8 text-center text-sm text-sd-ink-faint">
-          No primary session recorded for this day.
-        </p>
-      )}
+      <div className="sd-enter" style={staggerStyle(2)}>
+        {primary ? (
+          <SessionDetail
+            session={primary}
+            slot="primary"
+            alternatives={alternatives.length > 0 ? <Alternatives alternatives={alternatives} /> : undefined}
+          />
+        ) : (
+          <p className="rounded-sd-card border border-sd-line bg-sd-box/40 px-5 py-8 text-center text-sm text-sd-ink-faint">
+            No primary session recorded for this day.
+          </p>
+        )}
+      </div>
 
       {/* Secondary session */}
-      {secondary ? <SessionDetail session={secondary} slot="secondary" /> : null}
+      {secondary ? (
+        <div className="sd-enter" style={staggerStyle(3)}>
+          <SessionDetail session={secondary} slot="secondary" />
+        </div>
+      ) : null}
 
       {/* Logged result */}
-      {log ? <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} /> : null}
+      {log ? (
+        <div className="sd-enter" style={staggerStyle(4)}>
+          <LoggedVsPlan log={log} primary={primary} plannedKm={day.planned_run_km} />
+        </div>
+      ) : null}
     </DayFrame>
   );
 }
@@ -144,12 +159,12 @@ function DayArrow({ href, dir }: { href: string | null; dir: 'prev' | 'next' }) 
       {dir === 'prev' ? <path d="M15 18l-6-6 6-6" /> : <path d="M9 18l6-6-6-6" />}
     </svg>
   );
-  const base = 'grid size-7 place-items-center rounded-full border border-sd-line bg-sd-box transition-colors duration-150';
+  const base = 'grid size-7 place-items-center rounded-full border border-sd-line bg-sd-box';
   if (!href) {
     return <span aria-disabled className={`${base} cursor-not-allowed text-sd-ink-faint/40`}>{glyph}</span>;
   }
   return (
-    <Link href={href} aria-label={dir === 'prev' ? 'Previous day' : 'Next day'} className={`${base} text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink`}>
+    <Link href={href} aria-label={dir === 'prev' ? 'Previous day' : 'Next day'} className={`${base} sd-press text-sd-ink-dull hover:border-sd-selected hover:bg-sd-hover hover:text-sd-ink`}>
       {glyph}
     </Link>
   );

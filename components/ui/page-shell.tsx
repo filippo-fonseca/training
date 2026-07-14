@@ -70,12 +70,19 @@ export function NavItem({ href, icon, children, active = false }: NavItemProps) 
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors duration-150",
+        "sd-lift relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm",
         active
           ? "bg-sd-selected-item text-sd-accent-faint"
           : "text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink",
       )}
     >
+      {active ? (
+        <span
+          aria-hidden
+          className="sd-nav-indicator absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-full bg-sd-accent"
+          style={{ boxShadow: "0 0 8px var(--hud-cyan-glow)" }}
+        />
+      ) : null}
       {icon ? (
         <span className={cn("shrink-0", active ? "text-sd-accent" : "text-sd-ink-faint")}>
           {icon}

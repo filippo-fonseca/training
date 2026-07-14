@@ -47,7 +47,7 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
           <ProgressBar
             value={pct}
             label="Logged vs planned"
-            valueLabel={`${kmValue(loggedKm) || '0'} / ${kmValue(plannedKm) || '—'} km`}
+            valueLabel={`${kmValue(loggedKm) || '0'} / ${kmValue(plannedKm) || '--'} km`}
           />
         </div>
       </Panel>
@@ -104,7 +104,7 @@ function WeekDayRow({
       href={`/day/${day.date}`}
       style={staggerStyle(index)}
       className={cn(
-        'sd-enter sd-soft-hover flex items-stretch gap-3 border-b border-sd-line/60 px-3 py-3 outline-none last:border-b-0 hover:bg-sd-hover sm:px-4',
+        'sd-enter sd-lift flex items-stretch gap-3 border-b border-sd-line/60 px-3 py-3 outline-none last:border-b-0 hover:bg-sd-hover hover:border-sd-line sm:px-4',
         isToday && 'bg-sd-selected-item',
       )}
     >
@@ -175,7 +175,7 @@ function WeekDayRow({
       {/* Right: km + status */}
       <div className="flex shrink-0 flex-col items-end justify-center gap-1">
         <span className="sd-numeral text-sm font-semibold text-sd-ink">
-          {km ? `${km} km` : status === 'rest' ? '—' : ''}
+          {km ? `${km} km` : status === 'rest' ? '--' : ''}
         </span>
         {log?.actual_distance_km != null ? (
           <span className="sd-numeral text-[10px] text-ink-sage">

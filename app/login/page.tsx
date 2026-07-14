@@ -18,7 +18,7 @@ export default async function LoginPage({
   return (
     <main className="relative grid min-h-dvh place-items-center px-5 py-12">
       <BoldAmbient fixed />
-      <div className="relative z-10 w-full max-w-sm">
+      <div className="sd-enter-hero relative z-10 w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <span
             className="grid size-9 place-items-center rounded-sd-tile"

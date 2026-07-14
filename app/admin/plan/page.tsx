@@ -9,6 +9,7 @@ import { PlusGlyph } from '@/components/admin/icons';
 import { listPlans } from '@/app/admin/_lib/queries';
 import { formatDateRange, formatKm } from '@/app/admin/_lib/format';
 import { createPlan } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 export default async function PlanListPage() {
   const { ok, plans, error } = await listPlans();
@@ -36,8 +37,8 @@ export default async function PlanListPage() {
               <p className="text-sm text-sd-ink-dull">No plans yet. Create one below or import from JSON.</p>
             </Panel>
           ) : (
-            plans.map((p) => (
-              <Link key={p.id} href={`/admin/plan/${p.id}`}>
+            plans.map((p, i) => (
+              <Link key={p.id} href={`/admin/plan/${p.id}`} className="sd-enter block" style={staggerStyle(i)}>
                 <Panel interactive className="flex items-center justify-between gap-4 p-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

@@ -12,6 +12,7 @@ import { Field, Input, Textarea, Select } from '@/components/admin/field';
 import { PlusGlyph } from '@/components/admin/icons';
 import { getPlanOrNull } from '@/app/admin/_lib/queries';
 import { upsertMilestone, deleteMilestone } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 const MILESTONE_TYPES = [
   'decision_checkpoint',
@@ -97,18 +98,19 @@ export default async function Page({ params }: { params: Promise<{ planId: strin
         {milestones.length === 0 ? (
           <EmptyState title="No milestones yet" description="Add the first milestone below." />
         ) : (
-          milestones.map((m) => (
-            <CrudRow
-              key={m.id}
-              title={`${m.milestone_index}. ${m.title}`}
-              subtitle={`${m.type}${m.date ? ' · ' + m.date : ''}`}
-              deleteAction={deleteMilestone.bind(null, planId, m.id)}
-              deleteConfirm={`Delete milestone "${m.title}"?`}
-            >
-              <EntityForm action={upsertMilestone.bind(null, planId)} submitLabel="Save milestone">
-                <MilestoneFields milestone={m} />
-              </EntityForm>
-            </CrudRow>
+          milestones.map((m, i) => (
+            <div key={m.id} className="sd-enter" style={staggerStyle(i)}>
+              <CrudRow
+                title={`${m.milestone_index}. ${m.title}`}
+                subtitle={`${m.type}${m.date ? ' · ' + m.date : ''}`}
+                deleteAction={deleteMilestone.bind(null, planId, m.id)}
+                deleteConfirm={`Delete milestone "${m.title}"?`}
+              >
+                <EntityForm action={upsertMilestone.bind(null, planId)} submitLabel="Save milestone">
+                  <MilestoneFields milestone={m} />
+                </EntityForm>
+              </CrudRow>
+            </div>
           ))
         )}
       </div>

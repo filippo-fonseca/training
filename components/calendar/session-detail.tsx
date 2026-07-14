@@ -112,7 +112,7 @@ function Target({ label, value }: { label: string; value: string | null }) {
     <div className="flex flex-col gap-1">
       <span className="sd-stat-label">{label}</span>
       <span className={cn('sd-numeral text-sm font-medium leading-snug', empty ? 'text-sd-ink-faint' : 'text-sd-ink')}>
-        {value || '—'}
+        {value || '--'}
       </span>
     </div>
   );
@@ -124,7 +124,7 @@ function Meta({ label, value }: { label: string; value: string | null }) {
     <div className="flex flex-col gap-1">
       <span className="sd-stat-label">{label}</span>
       <span className={cn('text-sm leading-snug', empty ? 'text-sd-ink-faint' : 'text-sd-ink-dull')}>
-        {value || '—'}
+        {value || '--'}
       </span>
     </div>
   );

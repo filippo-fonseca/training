@@ -11,6 +11,7 @@ import { getConnection, getActivities, isStravaConfigured } from '@/lib/strava';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
 import { linkActivity, unlinkActivity, disconnect } from './actions';
 import { SyncNowButton } from './_components/sync-now';
+import { staggerStyle } from '@/lib/design/motion';
 
 export const metadata: Metadata = {
   title: 'Strava · Admin',
@@ -66,11 +67,11 @@ async function loadData(): Promise<StravaData> {
 
 // -- formatting -------------------------------------------------------------
 function km(m: number | null): string {
-  if (m == null) return '—';
+  if (m == null) return '--';
   return `${(m / 1000).toFixed(1)} km`;
 }
 function durationText(s: number | null): string {
-  if (s == null) return '—';
+  if (s == null) return '--';
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = Math.floor(s % 60);
@@ -88,7 +89,7 @@ function hrText(a: StravaActivity): string | null {
   return a.average_heartrate != null ? `${Math.round(a.average_heartrate)} bpm` : null;
 }
 function activityDate(a: StravaActivity): string {
-  if (!a.start_date) return '—';
+  if (!a.start_date) return '--';
   return new Date(a.start_date).toLocaleDateString('en-US', {
     timeZone: 'America/New_York',
     weekday: 'short',
@@ -235,12 +236,12 @@ export default async function StravaAdminPage({
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Athlete</dt>
                     <dd className="sd-numeral text-sd-ink-dull">
-                      {connection.strava_athlete_id ?? '—'}
+                      {connection.strava_athlete_id ?? '--'}
                     </dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Scope</dt>
-                    <dd className="text-sd-ink-dull">{connection.scope ?? '—'}</dd>
+                    <dd className="text-sd-ink-dull">{connection.scope ?? '--'}</dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Activities</dt>
@@ -284,8 +285,8 @@ export default async function StravaAdminPage({
               </p>
             ) : (
               <div className="space-y-2">
-                {unmatched.map((a) => (
-                  <Panel key={a.id} className="p-4">
+                {unmatched.map((a, i) => (
+                  <Panel key={a.id} className="sd-enter p-4" style={staggerStyle(i)}>
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm text-sd-ink">{a.name ?? 'Activity'}</p>
@@ -329,10 +330,10 @@ export default async function StravaAdminPage({
               <p className="text-xs text-sd-ink-faint">Nothing matched yet. Try “Sync now”.</p>
             ) : (
               <div className="space-y-2">
-                {matched.map((a) => {
+                {matched.map((a, i) => {
                   const day = a.plan_day_id ? dayById.get(a.plan_day_id) : undefined;
                   return (
-                    <Panel key={a.id} className="p-4">
+                    <Panel key={a.id} className="sd-enter p-4" style={staggerStyle(i)}>
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm text-sd-ink">{a.name ?? 'Activity'}</p>

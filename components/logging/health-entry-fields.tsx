@@ -8,14 +8,14 @@ import type { HealthEntry } from '@/lib/types/database';
  * PRIVATE table: this form is only ever mounted on /admin/health.
  */
 const GATES = [
-  ['', '—'],
+  ['', '--'],
   ['green', 'Green'],
   ['yellow', 'Yellow'],
   ['red', 'Red'],
 ] as const;
 
 const FOOT_STATUS = [
-  ['', '—'],
+  ['', '--'],
   ['baseline', 'Baseline'],
   ['changed', 'Changed'],
 ] as const;

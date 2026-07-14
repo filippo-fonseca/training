@@ -39,17 +39,17 @@ export function LoggedVsPlan({ log, primary, plannedKm }: LoggedVsPlanProps) {
 
         <CompareRow
           label="Distance"
-          planned={plannedKm != null && plannedKm > 0 ? formatKm(plannedKm) : '—'}
-          actual={log.actual_distance_km != null ? formatKm(log.actual_distance_km) : '—'}
+          planned={plannedKm != null && plannedKm > 0 ? formatKm(plannedKm) : '--'}
+          actual={log.actual_distance_km != null ? formatKm(log.actual_distance_km) : '--'}
         />
-        <CompareRow label="Pace" planned={primary?.pace_text ?? '—'} actual={log.actual_pace_text ?? '—'} />
+        <CompareRow label="Pace" planned={primary?.pace_text ?? '--'} actual={log.actual_pace_text ?? '--'} />
         <CompareRow
           label="RPE"
-          planned={primary?.rpe_text ?? '—'}
-          actual={log.actual_rpe != null ? `${log.actual_rpe}/10` : '—'}
+          planned={primary?.rpe_text ?? '--'}
+          actual={log.actual_rpe != null ? `${log.actual_rpe}/10` : '--'}
         />
         {log.actual_duration_min != null ? (
-          <CompareRow label="Duration" planned={primary?.duration_text ?? '—'} actual={`${log.actual_duration_min} min`} />
+          <CompareRow label="Duration" planned={primary?.duration_text ?? '--'} actual={`${log.actual_duration_min} min`} />
         ) : null}
       </div>
 
@@ -77,7 +77,7 @@ function CompareRow({ label, planned, actual }: { label: string; planned: string
     <>
       <span className="text-sd-ink-faint">{label}</span>
       <span className="sd-numeral text-sd-ink-dull">{planned}</span>
-      <span className={cn('sd-numeral font-medium', actual === '—' ? 'text-sd-ink-faint' : 'text-sd-ink')}>
+      <span className={cn('sd-numeral font-medium', actual === '--' ? 'text-sd-ink-faint' : 'text-sd-ink')}>
         {actual}
       </span>
     </>

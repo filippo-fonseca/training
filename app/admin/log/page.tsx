@@ -15,6 +15,8 @@ import {
 } from '@/app/admin/_lib/queries';
 import { formatDate, formatKm } from '@/app/admin/_lib/format';
 import { saveSessionLog, deleteSessionLog } from '@/app/admin/log/actions';
+import { ChevronRightGlyph } from '@/components/admin/icons';
+import { staggerStyle } from '@/lib/design/motion';
 
 interface PageProps {
   searchParams: Promise<{ week?: string }>;
@@ -65,8 +67,10 @@ export default async function LogPage({ searchParams }: PageProps) {
         </div>
       ) : (
         <div className="mt-4 grid gap-3">
-          {rows.map((row) => (
-            <DayLogRow key={row.day.id} planId={plan.id} row={row} isToday={row.day.date === today} />
+          {rows.map((row, i) => (
+            <div key={row.day.id} className="sd-enter" style={staggerStyle(i)}>
+              <DayLogRow planId={plan.id} row={row} isToday={row.day.date === today} />
+            </div>
           ))}
         </div>
       )}
@@ -79,7 +83,7 @@ function DayLogRow({ planId, row, isToday }: { planId: string; row: LogDayRow; i
   const summary = !log ? 'Not logged' : !log.completed ? 'Skipped' : log.modified ? 'Modified' : 'Completed';
 
   return (
-    <div className="sd-panel overflow-hidden p-0">
+    <div className="sd-panel sd-soft-hover overflow-hidden p-0 hover:border-sd-selected">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-sd-ink">
@@ -105,7 +109,12 @@ function DayLogRow({ planId, row, isToday }: { planId: string; row: LogDayRow; i
         </div>
       </div>
       <details open={isToday || !!log} className="group border-t border-sd-divider">
-        <summary className="cursor-pointer list-none px-4 py-2 text-tiny font-semibold uppercase tracking-wider text-sd-ink-faint transition-colors hover:text-sd-ink-dull [&::-webkit-details-marker]:hidden">
+        <summary className="flex list-none items-center gap-1.5 px-4 py-2 text-tiny font-semibold uppercase tracking-wider text-sd-ink-faint transition-colors hover:bg-sd-hover/50 hover:text-sd-ink-dull [&::-webkit-details-marker]:hidden">
+          <ChevronRightGlyph
+            width={12}
+            height={12}
+            className="shrink-0 transition-transform duration-150 group-open:rotate-90"
+          />
           {log ? 'Edit log' : 'Log this day'}
         </summary>
         <div className="px-4 pb-4 pt-1">

@@ -53,7 +53,7 @@ export function DayCell({ cell, date, inMonth, isToday, hasMilestone }: DayCellP
         km ? `, ${km} km` : ''
       }, ${statusMeta.label}`}
       className={cn(
-        'sd-soft-hover group relative flex min-h-[5.25rem] flex-col gap-1 overflow-hidden rounded-sd-tile border p-1.5',
+        'sd-lift group relative flex min-h-[5.25rem] flex-col gap-1 overflow-hidden rounded-sd-tile border p-1.5',
         'outline-none',
         isToday
           ? 'border-sd-accent/60 bg-sd-selected-item'
