@@ -4,6 +4,14 @@
     {
       "path": "/api/cron/strava-sync",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/auto-link",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/auto-link",
+      "schedule": "0 4 * * *"
     }
   ]
 }

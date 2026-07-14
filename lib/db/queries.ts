@@ -412,7 +412,9 @@ export async function getStravaActivities(
 // only fetch and mutate the join rows; grouping happens in the derive module.
 // -----------------------------------------------------------------------------
 
-/** Links for a set of day_session ids. Empty in, empty out (no query). */
+/** Links for a set of day_session ids. Empty in, empty out (no query). Only
+ *  session-level links match (day-level / off-plan links have a null
+ *  day_session_id); use getActivityLinksForDays to include off-plan links. */
 export async function getActivityLinksForSessions(
   client: TypedSupabaseClient,
   sessionIds: string[],
@@ -426,10 +428,27 @@ export async function getActivityLinksForSessions(
   return data ?? [];
 }
 
+/** Links for a set of plan_day ids. Covers BOTH session-level and day-level
+ *  (off-plan) links, since every link names its plan_day_id (0009). Empty in,
+ *  empty out (no query). */
+export async function getActivityLinksForDays(
+  client: TypedSupabaseClient,
+  dayIds: string[],
+): Promise<SessionActivityLink[]> {
+  if (dayIds.length === 0) return [];
+  const { data, error } = await client
+    .from('session_activity_links')
+    .select('*')
+    .in('plan_day_id', dayIds);
+  if (error) throw new DbError('getActivityLinksForDays', error);
+  return data ?? [];
+}
+
 /**
- * Every session-activity link for a plan, resolved by first collecting the
- * plan's day_session ids. Returns the links plus the day_session_id -> plan_day_id
- * map the caller needs to group evidence by day (see groupEvidenceByDay).
+ * Every session-activity link for a plan, fetched by plan_day_id so day-level
+ * (off-plan) links are included alongside session-level ones. Returns the links
+ * plus the day_session_id -> plan_day_id map (a legacy fallback for grouping;
+ * links now carry plan_day_id directly). See groupEvidenceByDay.
  */
 export async function getActivityLinksForPlan(
   client: TypedSupabaseClient,
@@ -451,8 +470,32 @@ export async function getActivityLinksForPlan(
   const sessionDay = new Map<string, string>();
   for (const s of sessions ?? []) sessionDay.set(s.id, s.plan_day_id);
 
-  const links = await getActivityLinksForSessions(client, [...sessionDay.keys()]);
+  const links = await getActivityLinksForDays(client, dayIds);
   return { links, sessionDay };
+}
+
+/**
+ * The most recently STARTED activity that is linked to this plan (session-level
+ * or day-level / off-plan), i.e. the latest verified run. Returns null when the
+ * plan has no linked activities. Two small reads (links by day, then the
+ * activities) so it works through PostgREST + RLS without a server-side join.
+ */
+export async function getLatestVerifiedActivity(
+  client: TypedSupabaseClient,
+  planId: string,
+): Promise<StravaActivity | null> {
+  const { links } = await getActivityLinksForPlan(client, planId);
+  const activityIds = [...new Set(links.map((l) => l.strava_activity_id))];
+  if (activityIds.length === 0) return null;
+  const { data, error } = await client
+    .from('strava_activities')
+    .select('*')
+    .in('id', activityIds)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new DbError('getLatestVerifiedActivity', error);
+  return data;
 }
 
 /**
@@ -474,10 +517,23 @@ export async function setSessionActivityLinks(
   const toRemove = [...current].filter((id) => !desired.has(id));
 
   if (toAdd.length > 0) {
-    const rows = toAdd.map((strava_activity_id) => ({ day_session_id: sessionId, strava_activity_id }));
+    // plan_day_id is required (0009). Resolve it from the session so a session-
+    // level link also names its day, and de-dupe on the (plan_day_id,
+    // strava_activity_id) unique.
+    const { data: session, error: sessErr } = await client
+      .from('day_sessions')
+      .select('plan_day_id')
+      .eq('id', sessionId)
+      .single();
+    if (sessErr) throw new DbError('setSessionActivityLinks(session)', sessErr);
+    const rows = toAdd.map((strava_activity_id) => ({
+      day_session_id: sessionId,
+      plan_day_id: session.plan_day_id,
+      strava_activity_id,
+    }));
     const { error } = await client
       .from('session_activity_links')
-      .upsert(rows, { onConflict: 'day_session_id,strava_activity_id', ignoreDuplicates: true });
+      .upsert(rows, { onConflict: 'plan_day_id,strava_activity_id', ignoreDuplicates: true });
     if (error) throw new DbError('setSessionActivityLinks(add)', error);
   }
   if (toRemove.length > 0) {

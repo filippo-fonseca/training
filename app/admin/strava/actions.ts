@@ -9,8 +9,10 @@ import { createServerSupabaseClient } from '@/lib/auth/server';
 import type { TypedSupabaseClient } from '@/lib/db';
 import {
   deleteConnection,
+  runAutoLink,
   runStravaSync,
   setActivityPlanDayById,
+  type AutoLinkSummary,
   type SyncResult,
 } from '@/lib/strava';
 
@@ -39,6 +41,27 @@ export async function syncNowAction(
   _formData: FormData,
 ): Promise<SyncResult> {
   return syncNow();
+}
+
+/**
+ * Auto-link today's Strava runs to the plan. Runs the shared core directly on
+ * the owner cookie client (RLS applies) with force semantics so it bypasses the
+ * 22:00-Chicago hour guard for an on-demand admin run. Never posts the cron
+ * secret to the browser (item 5): this is a server action, not an HTTP call.
+ */
+export async function autoLinkToday(): Promise<AutoLinkSummary> {
+  const supabase = await ownerClient();
+  const result = await runAutoLink(supabase, { force: true });
+  revalidate();
+  return result;
+}
+
+/** useActionState-compatible wrapper so the button can render the last summary. */
+export async function autoLinkTodayAction(
+  _prev: AutoLinkSummary | null,
+  _formData: FormData,
+): Promise<AutoLinkSummary> {
+  return autoLinkToday();
 }
 
 /** Manually link an activity to a plan day. */

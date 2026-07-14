@@ -63,9 +63,11 @@ export interface PublicStatusResponse {
  * Derived from the same signals the journey page's status pill uses (see
  * `today-card.tsx`), collapsed to the four public states. No plan day
  * scheduled, or an explicit rest day, both read as "rest". Evidence precedence
- * applies (lib/derive): >= 1 linked Strava activity reads as "logged" (done)
- * regardless of the manual log; a log-only day with `completed: false` reads
- * as "missed" rather than "logged".
+ * applies (lib/derive): >= 1 ON-PLAN (session-level) linked Strava activity
+ * reads as "logged" (done) regardless of the manual log; off-plan (day-level)
+ * evidence never produces "logged" for a planned session (decision D2; the
+ * view model gates todayActual on the onPlan flag). A log-only day with
+ * `completed: false` reads as "missed" rather than "logged".
  */
 export function deriveStatus(view: JourneyView): PublicStatus {
   const { session, todayActual } = view;

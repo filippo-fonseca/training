@@ -3,11 +3,16 @@ import assert from 'node:assert/strict';
 import type { SessionLog, StravaActivity } from '@/lib/types/database';
 import {
   cumulativeEvidence,
+  dayHasRunSession,
   effectiveActual,
+  evidenceById,
+  groupEvidenceByDay,
+  isRunSessionCategory,
   stravaActivityUrl,
   toActivityEvidence,
   type ActivityEvidence,
 } from './session-evidence';
+import type { SessionActivityLink } from '@/lib/types/database';
 
 function evidence(partial: Partial<ActivityEvidence>): ActivityEvidence {
   return {
@@ -159,4 +164,102 @@ test('effectiveActual: nothing linked and no log is not done', () => {
     durationMin: null,
     activityCount: 0,
   });
+});
+
+// -----------------------------------------------------------------------------
+// On-plan vs off-plan taxonomy + grouping (day-level links, decision D2).
+// -----------------------------------------------------------------------------
+
+function activityRow(partial: Partial<StravaActivity>): StravaActivity {
+  return {
+    id: 'row-1',
+    plan_id: null,
+    plan_day_id: null,
+    strava_id: 1,
+    name: null,
+    sport_type: 'Run',
+    start_date: '2026-07-14T18:00:00Z',
+    distance_m: 10000,
+    moving_time_s: 3000,
+    elapsed_time_s: 3100,
+    average_speed: null,
+    average_heartrate: null,
+    max_heartrate: null,
+    total_elevation_gain: null,
+    map_polyline: null,
+    photo_url: null,
+    raw: null,
+    created_at: '2026-07-14T00:00:00Z',
+    updated_at: '2026-07-14T00:00:00Z',
+    ...partial,
+  } as StravaActivity;
+}
+
+function link(partial: Partial<SessionActivityLink>): SessionActivityLink {
+  return {
+    id: 'link-1',
+    plan_day_id: 'day-1',
+    day_session_id: null,
+    strava_activity_id: 'row-1',
+    created_at: '2026-07-14T00:00:00Z',
+    ...partial,
+  } as SessionActivityLink;
+}
+
+test('isRunSessionCategory: positive run-family match only (never rest/strength/bike)', () => {
+  assert.equal(isRunSessionCategory('easy_run'), true);
+  assert.equal(isRunSessionCategory('long_run'), true);
+  assert.equal(isRunSessionCategory('quality_run'), true);
+  assert.equal(isRunSessionCategory('race'), true);
+  assert.equal(isRunSessionCategory('rest'), false);
+  assert.equal(isRunSessionCategory('strength_only'), false);
+  assert.equal(isRunSessionCategory('bike'), false); // cross-training: never run-linkable
+  assert.equal(isRunSessionCategory(null), false);
+  assert.equal(isRunSessionCategory('yoga'), false); // unknown categories default to off-plan
+});
+
+test('dayHasRunSession: true only when a running session exists', () => {
+  assert.equal(dayHasRunSession(['strength_only', 'rest']), false);
+  assert.equal(dayHasRunSession(['bike']), false);
+  assert.equal(dayHasRunSession(['rest', 'easy_run']), true);
+  assert.equal(dayHasRunSession([]), false);
+});
+
+test('groupEvidenceByDay: a session-level link is on-plan', () => {
+  const byId = evidenceById([activityRow({ id: 'row-1', strava_id: 1 })]);
+  const byDay = groupEvidenceByDay(
+    [link({ plan_day_id: 'day-1', day_session_id: 'sess-1', strava_activity_id: 'row-1' })],
+    byId,
+  );
+  const de = byDay.get('day-1');
+  assert.equal(de?.onPlan, true);
+  assert.equal(de?.activities.length, 1);
+});
+
+test('groupEvidenceByDay: a day-level (off-plan) link is NOT on-plan but logs volume', () => {
+  const byId = evidenceById([activityRow({ id: 'row-1', strava_id: 1, distance_m: 12000 })]);
+  const byDay = groupEvidenceByDay(
+    [link({ plan_day_id: 'day-1', day_session_id: null, strava_activity_id: 'row-1' })],
+    byId,
+  );
+  const de = byDay.get('day-1');
+  // Off-plan: never completes a planned session (onPlan false)...
+  assert.equal(de?.onPlan, false);
+  // ...but the activity still counts as logged volume for the day.
+  assert.equal(de?.activities.length, 1);
+  assert.equal(cumulativeEvidence(de!.activities).distanceKm, 12);
+});
+
+test('off-plan run never completes a strength day: onPlan gates done, volume still logs', () => {
+  const byId = evidenceById([activityRow({ id: 'row-1', strava_id: 1, distance_m: 9000 })]);
+  const byDay = groupEvidenceByDay(
+    [link({ plan_day_id: 'strength-day', day_session_id: null, strava_activity_id: 'row-1' })],
+    byId,
+  );
+  const de = byDay.get('strength-day');
+  // A caller withholds evidence from the done check when off-plan (onPlan false):
+  const done = de!.onPlan ? effectiveActual(de!.activities, null).done : effectiveActual([], null).done;
+  assert.equal(done, false); // strength session NOT marked done by the off-plan run
+  // Volume is still available from the day's evidence.
+  assert.equal(cumulativeEvidence(de!.activities).distanceKm, 9);
 });

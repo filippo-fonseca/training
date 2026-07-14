@@ -6,6 +6,10 @@ import { formatKm, formatDuration } from './format';
 interface SessionEvidenceProps {
   /** Linked Strava activities for this day/session. Renders nothing when empty. */
   evidence: ActivityEvidence[];
+  /** When true, the evidence is a day-level (off-plan) run: label it "OFF-PLAN
+   *  RUN" so a run on a day that planned nothing still reads as logged, without
+   *  implying a planned session was completed. Reusable across day/session use. */
+  offPlan?: boolean;
 }
 
 /**
@@ -15,13 +19,16 @@ interface SessionEvidenceProps {
  * title, and an outbound link to the activity on strava.com. Only curated,
  * public-safe fields are used (ActivityEvidence); no raw payload or private data.
  */
-export function SessionEvidence({ evidence }: SessionEvidenceProps) {
+export function SessionEvidence({ evidence, offPlan = false }: SessionEvidenceProps) {
   if (evidence.length === 0) return null;
   const cum = cumulativeEvidence(evidence);
   const many = evidence.length > 1;
 
   return (
     <Panel padded className="flex flex-col gap-4">
+      {offPlan ? (
+        <span className="sd-stat-label text-sd-ink-faint">Off-plan run</span>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span
           className="inline-flex w-fit items-center gap-1.5 rounded-sd-chrome border px-2 py-0.5 text-tiny font-semibold uppercase tracking-[0.1em]"

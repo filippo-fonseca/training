@@ -9,3 +9,4 @@ export * from './service';
 export * from './db';
 export * from './match';
 export * from './sync';
+export * from './auto-link';

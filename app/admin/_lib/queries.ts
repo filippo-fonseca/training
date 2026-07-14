@@ -281,6 +281,9 @@ export async function getStravaPickerData(sessionIds: string[]): Promise<StravaP
     ]);
     const linkedBySession = new Map<string, Set<string>>();
     for (const l of links) {
+      // Day-level (off-plan) links have a null day_session_id; the session picker
+      // only tracks session-level links.
+      if (!l.day_session_id) continue;
       const set = linkedBySession.get(l.day_session_id) ?? new Set<string>();
       set.add(l.strava_activity_id);
       linkedBySession.set(l.day_session_id, set);

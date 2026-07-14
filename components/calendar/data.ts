@@ -17,7 +17,7 @@ import {
   getDay,
   getLogForDay,
   getStravaActivities,
-  getActivityLinksForSessions,
+  getActivityLinksForDays,
   type TypedSupabaseClient,
 } from '@/lib/db';
 import type {
@@ -59,8 +59,11 @@ export interface CalendarDay {
   primary: DaySession | null;
   secondary: DaySession | null;
   log: SessionLog | null;
-  /** Linked Strava activities across the day's sessions (evidence). */
+  /** Linked Strava activities for the day (evidence): session-level + day-level. */
   evidence: ActivityEvidence[];
+  /** True when the day's evidence is only day-level (off-plan): a run on a day
+   *  that planned no running session. It logs volume but completes nothing. */
+  offPlan: boolean;
   status: DayStatus;
 }
 
@@ -107,8 +110,9 @@ export async function getCalendarData(
     for (const log of logs) logByDay.set(log.plan_day_id, log);
 
     // Linked Strava evidence grouped by plan day (public read; may be empty).
+    // Fetch by plan_day_id so day-level (off-plan) links are included.
     const [links, activities] = await Promise.all([
-      getActivityLinksForSessions(client, [...sessionDay.keys()]),
+      getActivityLinksForDays(client, dayIds),
       getStravaActivities(client),
     ]);
     const evidenceByDay = groupEvidenceByDay(links, evidenceById(activities), sessionDay);
@@ -118,14 +122,19 @@ export async function getCalendarData(
     for (const day of days) {
       const primary = primaryByDay.get(day.id) ?? null;
       const log = logByDay.get(day.id) ?? null;
-      const evidence = evidenceByDay.get(day.id) ?? [];
+      const de = evidenceByDay.get(day.id);
+      const evidence = de?.activities ?? [];
+      const onPlan = de?.onPlan ?? false;
+      // Off-plan evidence never completes the planned session, so only on-plan
+      // links drive the "logged" status (decision D2).
       daysByDate.set(day.date, {
         day,
         primary,
         secondary: secondaryByDay.get(day.id) ?? null,
         log,
         evidence,
-        status: deriveStatus(primary?.category ?? null, day.date, today, log, evidence.length),
+        offPlan: evidence.length > 0 && !onPlan,
+        status: deriveStatus(primary?.category ?? null, day.date, today, log, onPlan ? evidence.length : 0),
       });
     }
 
@@ -182,8 +191,11 @@ export interface DayData {
   alternatives: DayAlternative[];
   milestones: Milestone[];
   log: SessionLog | null;
-  /** Linked Strava activities across the day's sessions (evidence). */
+  /** Linked Strava activities for the day (evidence): session-level + day-level. */
   evidence: ActivityEvidence[];
+  /** True when the day's evidence is only day-level (off-plan): a run on a day
+   *  that planned no running session. It logs volume but completes nothing. */
+  offPlan: boolean;
   status: DayStatus;
   today: ISODate;
   prevDate: ISODate | null;
@@ -225,13 +237,16 @@ export async function getDayData(
     getWeeks(client, plan.id).catch(() => [] as PlanWeek[]),
     getMilestones(client, plan.id).catch(() => [] as Milestone[]),
     getLogForDay(client, day.id).catch(() => null),
-    getActivityLinksForSessions(client, sessions.map((s) => s.id)).catch(() => []),
+    // Fetch by plan_day_id so day-level (off-plan) links are included.
+    getActivityLinksForDays(client, [day.id]).catch(() => []),
     getStravaActivities(client).catch(() => []),
   ]);
 
   const sessionDay = new Map(sessions.map((s) => [s.id, day.id] as const));
   const evidenceByDay = groupEvidenceByDay(links, evidenceById(activities), sessionDay);
-  const evidence = evidenceByDay.get(day.id) ?? [];
+  const de = evidenceByDay.get(day.id);
+  const evidence = de?.activities ?? [];
+  const onPlan = de?.onPlan ?? false;
 
   const week = weeks.find((w) => w.id === day.week_id) ?? null;
   const dayMilestones = milestones.filter((m) => m.date === date);
@@ -247,7 +262,10 @@ export async function getDayData(
     milestones: dayMilestones,
     log,
     evidence,
-    status: deriveStatus(primary?.category ?? null, date, today, log, evidence.length),
+    offPlan: evidence.length > 0 && !onPlan,
+    // Off-plan evidence never completes the planned session, so only on-plan
+    // links drive the "logged" status (decision D2).
+    status: deriveStatus(primary?.category ?? null, date, today, log, onPlan ? evidence.length : 0),
     today,
     prevDate:
       plan.start_date && date > plan.start_date

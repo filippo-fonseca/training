@@ -23,11 +23,13 @@ import {
   effectiveActual,
   evidenceById,
   groupEvidenceByDay,
-  type ActivityEvidence,
+  type DayEvidence,
 } from '../derive';
 
-/** Linked Strava evidence per plan_day_id. Empty map = no links (log fallback). */
-export type EvidenceByDay = Map<string, ActivityEvidence[]>;
+/** Linked Strava evidence per plan_day_id. Empty map = no links (log fallback).
+ *  Each entry carries the day's activities plus an on-plan flag so an off-plan
+ *  run logs volume without completing a strength/rest session (decision D2). */
+export type EvidenceByDay = Map<string, DayEvidence>;
 
 const NO_EVIDENCE: EvidenceByDay = new Map();
 
@@ -102,12 +104,14 @@ export function computeWeeklyKm(
   for (const log of logs) logByDay.set(log.plan_day_id, log);
 
   // Effective actual km per day: linked Strava evidence takes precedence over the
-  // manual log (lib/derive). A day counts as "logged" when either exists.
+  // manual log (lib/derive). A day counts as "logged" when either exists. Off-plan
+  // (day-level) evidence still contributes its km volume here; the on-plan flag
+  // only gates session COMPLETION, not logged volume (decision D2).
   const actualByDay = new Map<string, number>();
   const loggedDayIds = new Set<string>();
   for (const day of days) {
     const log = logByDay.get(day.id) ?? null;
-    const evidence = evidenceByDay.get(day.id) ?? [];
+    const evidence = evidenceByDay.get(day.id)?.activities ?? [];
     if (!log && evidence.length === 0) continue;
     loggedDayIds.add(day.id);
     const actual = effectiveActual(evidence, log);
@@ -197,15 +201,19 @@ export function computeProgressSummary(
     }
   }
 
-  // A session is done when >= 1 Strava activity is linked to its day, else when
-  // its manual log says completed (evidence precedence, lib/derive).
+  // A session is done when >= 1 ON-PLAN Strava activity is linked to its day, else
+  // when its manual log says completed (evidence precedence, lib/derive). An
+  // off-plan (day-level) run never completes a planned session, so its evidence is
+  // withheld from the done check (decision D2) while still counting as volume above.
   const logByDay = new Map(logs.map((l) => [l.plan_day_id, l] as const));
   let completedSessions = 0;
   for (const day of days) {
     const log = logByDay.get(day.id) ?? null;
-    const evidence = evidenceByDay.get(day.id) ?? [];
+    const de = evidenceByDay.get(day.id);
+    const evidence = de?.activities ?? [];
+    const onPlan = de?.onPlan ?? false;
     if (!log && evidence.length === 0) continue;
-    if (effectiveActual(evidence, log).done) completedSessions += 1;
+    if (effectiveActual(onPlan ? evidence : [], log).done) completedSessions += 1;
   }
 
   return {
