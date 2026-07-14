@@ -21,6 +21,8 @@ export type {
   HealthEntryInsert,
   StravaConnection,
   StravaActivity,
+  SessionActivityLink,
+  SessionActivityLinkInsert,
   AppSetting,
   SessionSlot,
   SessionCategory,
