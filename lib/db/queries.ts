@@ -244,6 +244,29 @@ export async function getAlternativesForDay(
   return data;
 }
 
+/**
+ * Every session across a plan, in one round trip. day_sessions has no plan_id of
+ * its own (it hangs off plan_day_id), so this reads the plan's days first and
+ * then bulk-fetches their sessions with a single `in (...)` filter (no N+1).
+ * Public-safe: the columns are the same curated fields the calendar already
+ * exposes. Used by the stats aggregation layer for planned-volume-by-type.
+ */
+export async function getSessionsForPlan(
+  client: TypedSupabaseClient,
+  planId: string,
+): Promise<DaySession[]> {
+  const days = await getDays(client, planId);
+  const dayIds = days.map((d) => d.id);
+  if (dayIds.length === 0) return [];
+  const { data, error } = await client
+    .from('day_sessions')
+    .select('*')
+    .in('plan_day_id', dayIds)
+    .order('slot', { ascending: true });
+  if (error) throw new DbError('getSessionsForPlan', error);
+  return data;
+}
+
 // -----------------------------------------------------------------------------
 // Milestones + checkpoints
 // -----------------------------------------------------------------------------

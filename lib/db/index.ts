@@ -2,6 +2,7 @@
 export * from './client';
 export * from './queries';
 export * from './progress';
+export * from './stats';
 export type {
   Database,
   Json,
