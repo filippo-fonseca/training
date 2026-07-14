@@ -12,6 +12,7 @@ import { PlusGlyph, ChevronRightGlyph } from '@/components/admin/icons';
 import { getPlanOrNull, getDaysOverview } from '@/app/admin/_lib/queries';
 import { formatDate, formatKm } from '@/app/admin/_lib/format';
 import { createDay } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 export default async function DaysPage({ params }: { params: Promise<{ planId: string }> }) {
   const { planId } = await params;
@@ -62,10 +63,10 @@ export default async function DaysPage({ params }: { params: Promise<{ planId: s
                   {week ? `Week ${week.week_index}${week.phase_label ? ` · ${week.phase_label}` : ''}` : 'Unassigned'}
                 </h2>
                 <div className="grid gap-2">
-                  {weekDays.map((d) => {
+                  {weekDays.map((d, i) => {
                     const primary = primaryByDay.get(d.id);
                     return (
-                      <Link key={d.id} href={`/admin/plan/${planId}/days/${d.id}`}>
+                      <Link key={d.id} href={`/admin/plan/${planId}/days/${d.id}`} className="sd-enter block" style={staggerStyle(i)}>
                         <Panel interactive className="flex items-center gap-3 p-3">
                           <span className="sd-numeral w-10 shrink-0 text-xs text-sd-ink-faint">
                             {d.day_index}/98

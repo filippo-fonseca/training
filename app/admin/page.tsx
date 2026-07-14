@@ -5,6 +5,7 @@ import { StatusPill } from '@/components/ui/status-pill';
 import { PlanGlyph, ImportGlyph, GearGlyph } from '@/components/admin/icons';
 import { listPlans } from '@/app/admin/_lib/queries';
 import { formatKm, formatDateRange } from '@/app/admin/_lib/format';
+import { staggerStyle } from '@/lib/design/motion';
 
 const QUICK_LINKS = [
   { href: '/admin/plan', label: 'Plan', desc: 'Edit phases, weeks, days, and sessions.', icon: <PlanGlyph /> },
@@ -23,8 +24,8 @@ export default async function AdminHome() {
       />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        {QUICK_LINKS.map((l) => (
-          <Link key={l.href} href={l.href}>
+        {QUICK_LINKS.map((l, i) => (
+          <Link key={l.href} href={l.href} className="sd-enter block" style={staggerStyle(i)}>
             <Panel interactive className="flex h-full flex-col gap-2 p-4">
               <span className="text-sd-ink-dull">{l.icon}</span>
               <span className="text-sm font-semibold text-sd-ink">{l.label}</span>
@@ -59,8 +60,8 @@ export default async function AdminHome() {
         </Panel>
       ) : (
         <div className="grid gap-3">
-          {plans.map((p) => (
-            <Link key={p.id} href={`/admin/plan/${p.id}`}>
+          {plans.map((p, i) => (
+            <Link key={p.id} href={`/admin/plan/${p.id}`} className="sd-enter block" style={staggerStyle(i)}>
               <Panel interactive className="flex items-center justify-between gap-4 p-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">

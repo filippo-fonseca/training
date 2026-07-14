@@ -10,6 +10,7 @@ import { getPlanOrNull, getPlanCounts } from '@/app/admin/_lib/queries';
 import { getPlanPrivateNotes } from '@/lib/db';
 import { createServerSupabaseClient } from '@/lib/auth/server';
 import { updatePlan, deletePlan } from '@/app/admin/plan/actions';
+import { staggerStyle } from '@/lib/design/motion';
 
 const SECTIONS = [
   { key: 'phases', label: 'Phases', desc: 'Training blocks spanning weeks.' },
@@ -40,8 +41,8 @@ export default async function PlanDetailPage({ params }: { params: Promise<{ pla
 
       {/* Structure navigation */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map((s) => (
-          <Link key={s.key} href={`/admin/plan/${planId}/${s.key}`}>
+        {SECTIONS.map((s, i) => (
+          <Link key={s.key} href={`/admin/plan/${planId}/${s.key}`} className="sd-enter block" style={staggerStyle(i)}>
             <Panel interactive className="flex items-center justify-between gap-3 p-4">
               <div>
                 <div className="flex items-center gap-2">
