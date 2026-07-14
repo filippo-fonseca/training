@@ -22,8 +22,8 @@ interface NavDef {
 
 const NAV: NavDef[] = [
   { href: '/admin/plan', label: 'Plan', icon: <PlanGlyph /> },
-  { href: '/admin/log', label: 'Log', icon: <LogGlyph />, pending: true },
-  { href: '/admin/health', label: 'Health', icon: <HeartPulseGlyph />, pending: true },
+  { href: '/admin/log', label: 'Log', icon: <LogGlyph /> },
+  { href: '/admin/health', label: 'Health', icon: <HeartPulseGlyph /> },
   { href: '/admin/strava', label: 'Strava', icon: <ActivityGlyph />, pending: true },
   { href: '/admin/import', label: 'Import', icon: <ImportGlyph /> },
   { href: '/admin/settings', label: 'Settings', icon: <GearGlyph /> },
