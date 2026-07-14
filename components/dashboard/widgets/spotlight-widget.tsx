@@ -92,8 +92,8 @@ export function SpotlightWidget({ spotlight, onOpen }: Props) {
                 No verified runs yet
               </h2>
               <p className="max-w-sm text-xs text-sd-ink-dull">
-                The most recent Strava-linked run will spotlight here once the
-                build is underway.
+                The most recent verified run will spotlight here once one is
+                linked from Strava.
               </p>
             </>
           )}
