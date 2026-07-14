@@ -1,0 +1,216 @@
+{
+  "version": 1,
+  "plan": {
+    "slug": "sample-hm-2026",
+    "title": "Sample Half-Marathon Block",
+    "version": 1,
+    "status": "draft",
+    "prepared_on": "2026-01-05",
+    "athlete_name": "Sample Athlete",
+    "athlete_age": 30,
+    "athlete_notes": "Illustrative plan showing the import schema. Not a real training block.",
+    "race_name": "Example Half Marathon",
+    "race_distance_km": 21.1,
+    "race_date": "2026-04-12",
+    "race_start_time": "08:00",
+    "race_location": "Anytown",
+    "race_course_notes": "Flat loop course, one water stop every 3 km.",
+    "start_date": "2026-01-05",
+    "end_date": "2026-01-11",
+    "total_planned_km": 32.0,
+    "north_star": "Return to consistent easy running and one weekly long run.",
+    "plan_logic": "Aerobic base week with a single quality touch and a gated long run.",
+    "medical_notes": "Coaching guidance only, not medical advice.",
+    "goal_a": "Sub 1:35 (about 4:30/km)",
+    "goal_b": "Personal best by RPE",
+    "goal_c": "Finish healthy and controlled"
+  },
+  "phases": [
+    {
+      "phase_index": 1,
+      "name": "Aerobic base",
+      "start_week": 1,
+      "end_week": 1,
+      "description": "Easy volume with one controlled quality session."
+    }
+  ],
+  "weeks": [
+    {
+      "week_index": 1,
+      "phase_index": 1,
+      "phase_label": "Aerobic base",
+      "planned_km": 32.0,
+      "range_min_km": 28.0,
+      "range_max_km": 34.0,
+      "run_days": 4,
+      "long_run_km": 14.0,
+      "previous_text": "rehab",
+      "pct_change_text": "baseline",
+      "coaching_note": "Keep every easy run genuinely easy; the long run is gated on how the knee feels.",
+      "performance_target": "Complete four runs at conversational effort.",
+      "injury_target": "No knee pain above 2/10 during or after runs.",
+      "bike_note": "Optional easy spin on the rest day.",
+      "strength_note": "Two short strength sessions, subfailure.",
+      "is_cutback": false,
+      "is_taper": false,
+      "is_race_week": false,
+      "is_peak": false
+    }
+  ],
+  "days": [
+    {
+      "week_index": 1,
+      "date": "2026-01-05",
+      "day_index": 1,
+      "weekday": "Mon",
+      "days_to_race": 97,
+      "week_number": 1,
+      "phase_label": "Aerobic base",
+      "planned_run_km": 6.0,
+      "cumulative_km": 6.0,
+      "sessions": [
+        {
+          "slot": "primary",
+          "title": "Easy run",
+          "category": "easy_run",
+          "is_quality": false,
+          "role": "Open the week with relaxed aerobic running.",
+          "prescription_text": "6 km easy on soft surface, nose-breathing pace.",
+          "distance_km": 6.0,
+          "duration_text": "35-40 min",
+          "duration_min_minutes": 35,
+          "duration_max_minutes": 40,
+          "pace_text": "5:40-6:10/km",
+          "pace_min_s_per_km": 340,
+          "pace_max_s_per_km": 370,
+          "rpe_text": "3/10",
+          "hr_text": "usually 130-150 bpm",
+          "terrain": "soft trail or track",
+          "cue": "tall posture, quiet feet",
+          "fuel": "water only",
+          "shoes": "daily trainer",
+          "completion_planned": "Planned: 6.0 km at easy effort, RPE 3."
+        },
+        {
+          "slot": "secondary",
+          "title": "Upper A",
+          "category": "strength_only",
+          "is_quality": false,
+          "role": "General upper-body strength.",
+          "prescription_text": "Push, pull, and core circuit. 2 rounds, RPE 6 cap.",
+          "rpe_text": "6/10 cap"
+        }
+      ],
+      "alternatives": []
+    },
+    {
+      "week_index": 1,
+      "date": "2026-01-07",
+      "day_index": 3,
+      "weekday": "Wed",
+      "days_to_race": 95,
+      "week_number": 1,
+      "phase_label": "Aerobic base",
+      "planned_run_km": 8.0,
+      "cumulative_km": 14.0,
+      "sessions": [
+        {
+          "slot": "primary",
+          "title": "Controlled fartlek",
+          "category": "quality_run",
+          "is_quality": true,
+          "role": "Introduce light quality without straining the knee.",
+          "prescription_text": "2 km easy, then 6 x 1 min steady / 1 min easy, then 2 km easy.",
+          "distance_km": 8.0,
+          "duration_text": "45-50 min",
+          "duration_min_minutes": 45,
+          "duration_max_minutes": 50,
+          "pace_text": "steady reps by feel",
+          "rpe_text": "6-7/10 on reps",
+          "hr_text": "secondary",
+          "terrain": "flat path",
+          "cue": "relaxed shoulders on the pickups",
+          "fuel": "water",
+          "shoes": "daily trainer",
+          "completion_planned": "Planned: 8.0 km with 6 x 1 min steady."
+        },
+        {
+          "slot": "secondary",
+          "title": "Mobility",
+          "category": "rest",
+          "is_quality": false,
+          "prescription_text": "10 min hip and calf mobility."
+        }
+      ],
+      "alternatives": []
+    },
+    {
+      "week_index": 1,
+      "date": "2026-01-11",
+      "day_index": 7,
+      "weekday": "Sun",
+      "days_to_race": 91,
+      "week_number": 1,
+      "phase_label": "Aerobic base",
+      "planned_run_km": 14.0,
+      "cumulative_km": 32.0,
+      "sessions": [
+        {
+          "slot": "primary",
+          "title": "Easy long run",
+          "category": "long_run",
+          "is_quality": false,
+          "role": "Weekly aerobic long run, gated on knee status.",
+          "prescription_text": "14 km easy if green. See alternatives for yellow and red days.",
+          "distance_km": 14.0,
+          "duration_text": "80-90 min",
+          "duration_min_minutes": 80,
+          "duration_max_minutes": 90,
+          "pace_text": "5:45-6:15/km",
+          "rpe_text": "4/10",
+          "hr_text": "usually 135-155 bpm",
+          "terrain": "rolling",
+          "cue": "even effort, walk breaks allowed",
+          "fuel": "1 gel at 45 min, sip water",
+          "shoes": "cushioned trainer",
+          "completion_planned": "Planned: 14.0 km easy long run."
+        },
+        {
+          "slot": "secondary",
+          "title": "Rest",
+          "category": "rest",
+          "is_quality": false,
+          "prescription_text": "No lifting. Optional walk."
+        }
+      ],
+      "alternatives": [
+        { "gate": "green", "prescription": "Full 14 km easy long run.", "distance_km": 14.0 },
+        { "gate": "yellow", "prescription": "Shorten to 8-10 km easy, stop if pain rises.", "distance_km": 9.0 },
+        { "gate": "red", "prescription": "No run. Easy 30 min bike or full rest.", "distance_km": null }
+      ]
+    }
+  ],
+  "milestones": [
+    {
+      "milestone_index": 1,
+      "type": "gated_long_run",
+      "title": "First gated long run",
+      "date": "2026-01-11",
+      "week_number": 1,
+      "description": "The Sunday long run is green-gated on knee status.",
+      "green_criteria": "Knee at or below 2/10 all week.",
+      "yellow_criteria": "Mild soreness 3/10; reduce distance.",
+      "red_criteria": "Pain above 3/10 or altered gait; do not run."
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_index": 1,
+      "title": "End of week 1 review",
+      "after_week": 1,
+      "green_action": "Progress volume next week as planned.",
+      "yellow_action": "Hold volume flat and repeat the base week.",
+      "red_action": "Reduce running and seek a clinical review."
+    }
+  ]
+}
