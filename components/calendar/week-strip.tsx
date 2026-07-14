@@ -38,7 +38,7 @@ export function WeekStrip({ data, weekIndex }: WeekStripProps) {
           <h2 className="text-lg font-semibold text-sd-ink">{week?.phase_label ?? 'Week'}</h2>
           {week?.range_min_km != null && week?.range_max_km != null ? (
             <span className="sd-numeral text-xs text-sd-ink-faint">
-              Range {kmValue(week.range_min_km)}–{kmValue(week.range_max_km)} km
+              Range {kmValue(week.range_min_km)}-{kmValue(week.range_max_km)} km
               {week.long_run_km ? ` · long run ${kmValue(week.long_run_km)} km` : ''}
             </span>
           ) : null}
