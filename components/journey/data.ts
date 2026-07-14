@@ -20,7 +20,7 @@ import {
   type SessionLog,
   type DayDetail,
 } from "@/lib/db";
-import type { ActivityEvidence } from "@/lib/derive";
+import type { DayEvidence } from "@/lib/derive";
 import {
   computeView,
   findCurrentWeek,
@@ -84,8 +84,12 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
     const logsByDayId: Record<string, SessionLog> = {};
     for (const l of logs) logsByDayId[l.plan_day_id] = l;
 
-    const evidenceByDayId: Record<string, ActivityEvidence[]> = {};
-    for (const [dayId, de] of evidence) evidenceByDayId[dayId] = de.activities;
+    // Carry the full DayEvidence (activities + onPlan) so the view model can
+    // gate done/status on session-level evidence while still counting off-plan
+    // volume (decision D2). Never flatten to activities here: that would let an
+    // off-plan run read as completing a planned bike/strength session.
+    const evidenceByDayId: Record<string, DayEvidence> = {};
+    for (const [dayId, de] of evidence) evidenceByDayId[dayId] = de;
 
     return {
       plan,

@@ -7,7 +7,6 @@ import {
   effectiveActual,
   evidenceById,
   groupEvidenceByDay,
-  groupEvidenceBySession,
   isRunSessionCategory,
   stravaActivityUrl,
   toActivityEvidence,
@@ -263,17 +262,4 @@ test('off-plan run never completes a strength day: onPlan gates done, volume sti
   assert.equal(done, false); // strength session NOT marked done by the off-plan run
   // Volume is still available from the day's evidence.
   assert.equal(cumulativeEvidence(de!.activities).distanceKm, 9);
-});
-
-test('groupEvidenceBySession: day-level (null day_session_id) links are excluded', () => {
-  const byId = evidenceById([activityRow({ id: 'row-1', strava_id: 1 })]);
-  const bySession = groupEvidenceBySession(
-    [
-      link({ day_session_id: null, strava_activity_id: 'row-1' }),
-      link({ id: 'link-2', day_session_id: 'sess-1', strava_activity_id: 'row-1' }),
-    ],
-    byId,
-  );
-  assert.equal(bySession.has('sess-1'), true);
-  assert.equal(bySession.size, 1); // the null-session link is not grouped
 });

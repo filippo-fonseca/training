@@ -213,26 +213,6 @@ function sortByStart(a: ActivityEvidence, b: ActivityEvidence): number {
   return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0;
 }
 
-/** Group linked evidence by day_session_id. Day-level (off-plan) links carry a
- *  null day_session_id and are skipped here: they belong to the day, not a
- *  session, so a session picker never surfaces them. */
-export function groupEvidenceBySession(
-  links: SessionActivityLink[],
-  activitiesById: Map<string, ActivityEvidence>,
-): Map<string, ActivityEvidence[]> {
-  const bySession = new Map<string, ActivityEvidence[]>();
-  for (const link of links) {
-    if (!link.day_session_id) continue;
-    const ev = activitiesById.get(link.strava_activity_id);
-    if (!ev) continue;
-    const list = bySession.get(link.day_session_id) ?? [];
-    list.push(ev);
-    bySession.set(link.day_session_id, list);
-  }
-  for (const list of bySession.values()) list.sort(sortByStart);
-  return bySession;
-}
-
 /**
  * A plan day's linked evidence: every activity attached to the day (session-
  * level plus day-level / off-plan), plus whether ANY of them completes a planned

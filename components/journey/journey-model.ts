@@ -15,7 +15,12 @@ import type {
   SessionLog,
   DayDetail,
 } from "@/lib/db";
-import { effectiveActual, type ActivityEvidence, type EffectiveActual } from "@/lib/derive";
+import {
+  effectiveActual,
+  type ActivityEvidence,
+  type DayEvidence,
+  type EffectiveActual,
+} from "@/lib/derive";
 import { countdown, daysBetween, type Countdown } from "./journey-time";
 
 /**
@@ -73,9 +78,11 @@ export interface JourneyBundle {
   weekDays: PlanDay[];
   /** Session logs indexed by plan_day_id (public read; may be empty). */
   logsByDayId: Record<string, SessionLog>;
-  /** Linked Strava evidence indexed by plan_day_id (public-safe projection).
-   *  Optional so fixtures and older callers need no change; empty = no links. */
-  evidenceByDayId?: Record<string, ActivityEvidence[]>;
+  /** Linked Strava evidence indexed by plan_day_id (public-safe projection),
+   *  carrying the onPlan flag so off-plan (day-level) evidence can log volume
+   *  without ever completing a planned session (decision D2). Optional so
+   *  fixtures and older callers need no change; empty = no links. */
+  evidenceByDayId?: Record<string, DayEvidence>;
   /** Whether this bundle came from the live database or the local fixture. */
   source: "live" | "fixture";
 }
@@ -233,17 +240,29 @@ export function computeView(bundle: JourneyBundle, todayISO: string): JourneyVie
   };
 
   const todayLog = todayDetail ? logsByDayId[todayDetail.day.id] ?? null : null;
-  const todayEvidence = todayDetail ? evidenceByDayId[todayDetail.day.id] ?? [] : [];
-  const todayActual = effectiveActual(todayEvidence, todayLog);
+  const todayDE = todayDetail ? evidenceByDayId[todayDetail.day.id] : undefined;
+  const todayEvidence = todayDE?.activities ?? [];
+  // Done/status gate on the onPlan flag (decision D2, mirroring lib/db/progress
+  // and components/calendar/data): only SESSION-level evidence (or a completed
+  // manual log) can mark today's planned session done. Off-plan (day-level)
+  // evidence is withheld here, so a run on a bike/strength day never renders
+  // "Done, verified" or a "logged" public status; its volume still counts in
+  // the weekly snapshot below.
+  const todayActual = effectiveActual(todayDE?.onPlan ? todayEvidence : [], todayLog);
 
   // Weekly km snapshot: planned ceiling vs the effective actuals so far (linked
   // Strava evidence per day wins; the manual log is the fallback, per lib/derive).
+  // Volume deliberately includes OFF-PLAN evidence: an off-plan run logs km for
+  // its day even though it completes nothing (decision D2).
   let loggedKm = 0;
   let plannedToDateKm = 0;
   let hasLogs = false;
   for (const d of weekDays) {
     if (d.date <= todayISO) plannedToDateKm += d.planned_run_km ?? 0;
-    const actual = effectiveActual(evidenceByDayId[d.id] ?? [], logsByDayId[d.id] ?? null);
+    const actual = effectiveActual(
+      evidenceByDayId[d.id]?.activities ?? [],
+      logsByDayId[d.id] ?? null,
+    );
     if (actual.distanceKm != null) {
       loggedKm += actual.distanceKm;
       hasLogs = true;
