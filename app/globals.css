@@ -1,0 +1,460 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   Spacedrivey design system — token source of truth.
+   Implemented verbatim from docs/DESIGN-BRIEF.md. Dark-only this session.
+   Components consume these tokens; never inline raw hex in components.
+   ========================================================================= */
+
+:root {
+  color-scheme: dark;
+
+  /* --- 2a. Accent: JARVIS cyan (the one hue that owns the app) --- */
+  --sd-accent: oklch(72% 0.13 210);
+  --sd-accent-faint: oklch(78% 0.16 210);
+  --sd-accent-deep: oklch(58% 0.1 210);
+  --sd-accent-ink: hsl(235 45% 9%); /* dark cool text on accent fills */
+  --hud-cyan-glow: rgb(34 211 238 / 0.18);
+  --hud-cyan-glow-soft: rgb(34 211 238 / 0.08);
+  --hud-cyan-rgb: 34, 211, 238;
+
+  /* Glow shadow presets */
+  --sd-glow-subtle: 0 0 20px rgb(34 211 238 / 0.1);
+  --sd-glow-medium: 0 0 28px rgb(34 211 238 / 0.16);
+  --sd-glow-strong: 0 0 36px rgb(34 211 238 / 0.24);
+
+  /* --- 2b. Dark surface ladder (hue-235 "sd" ladder) --- */
+  --sd-app: hsl(235 15% 13%);
+  --sd-box: hsl(235 15% 18%);
+  --sd-dark-box: hsl(235 15% 15%);
+  --sd-darker-box: hsl(235 16% 11%);
+  --sd-input: hsl(235 15% 20%);
+  --sd-line: hsl(235 15% 23%);
+  --sd-divider: hsl(235 15% 5%);
+  --sd-hover: hsl(235 15% 19%);
+  --sd-selected: hsl(235 15% 24%);
+  --sd-selected-item: hsl(235 15% 18%);
+  --sd-active: hsl(235 15% 30%);
+  --sd-frame: hsl(235 15% 25%);
+  --sd-menu: hsl(235 15% 10%);
+  --sd-menu-line: hsl(235 15% 14%);
+  --sd-menu-hover: hsl(235 15% 30%);
+  --sd-icon-shadow: hsl(235 15% 0% / 0.28);
+
+  /* Sidebar: the darkest surface, rendered translucent over canvas */
+  --sd-sidebar: hsl(235 15% 7%);
+  --sd-sidebar-divider: hsl(235 15% 17%);
+
+  /* Hero / near-black marketing field (blue-tinted) */
+  --sd-hero: #0b0d12;
+  --sd-hero-deep: #07080a;
+
+  /* --- 2c. Ink (text tiers) --- */
+  --sd-ink: hsl(235 35% 92%);
+  --sd-ink-dull: hsl(235 10% 70%);
+  --sd-ink-faint: hsl(235 10% 55%);
+
+  /* --- 2d. Semantic / functional hues (dots + 15% chips ONLY) --- */
+  --ink-sage: oklch(68% 0.1 145);
+  --ink-amber: oklch(72% 0.12 75);
+  --ink-coral: oklch(68% 0.15 25);
+  --ink-violet: oklch(68% 0.12 295);
+  --ink-blue: oklch(67% 0.12 255);
+
+  /* --- 4. Radius scale (strict, D7) --- */
+  --sd-radius-thumb: 2px;
+  --sd-radius-crumb: 4px;
+  --sd-radius-chrome: 6px; /* buttons that aren't pills, rows, menus, chips */
+  --sd-radius-tile: 8px; /* tile backplates */
+  --sd-radius-card: 12px; /* entity cards / panels */
+  --sd-radius-full: 9999px; /* pills, status pills, primary buttons, bars */
+
+  /* --- 4. Shadow / elevation (hairlines, not heavy shadows) --- */
+  --sd-bevel: rgba(255, 255, 255, 0.15) 0 1px 0 inset; /* white top hairline */
+  --sd-bevel-strong: rgba(255, 255, 255, 0.3) 0 1px 0 inset;
+  --sd-shadow-quiet: 0 1px 2px rgb(0 0 0 / 0.08);
+  --sd-shadow-float: 0 8px 24px rgb(0 0 0 / 0.1);
+
+  /* --- 4. Blur / translucency --- */
+  --sd-blur-topbar: 18px;
+  --sd-blur-pill: 8px;
+  --sd-blur-overlay: 32px;
+
+  /* --- 5. Motion easings (tokens, D4) --- */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-soft-landing: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-collapse: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* -------------------------------------------------------------------------
+   Tailwind v4 theme mapping. `inline` so utilities emit var() references,
+   keeping the token layer above as the single source of truth.
+   ------------------------------------------------------------------------- */
+@theme inline {
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+    sans-serif;
+  --font-mono: var(--font-mono), "Fira Code", ui-monospace, Menlo, monospace;
+
+  --text-tiny: 0.65rem; /* 10.4px — captions and pill labels */
+  --text-tiny--line-height: 1.2;
+
+  --color-sd-app: var(--sd-app);
+  --color-sd-box: var(--sd-box);
+  --color-sd-dark-box: var(--sd-dark-box);
+  --color-sd-darker-box: var(--sd-darker-box);
+  --color-sd-input: var(--sd-input);
+  --color-sd-line: var(--sd-line);
+  --color-sd-divider: var(--sd-divider);
+  --color-sd-hover: var(--sd-hover);
+  --color-sd-selected: var(--sd-selected);
+  --color-sd-selected-item: var(--sd-selected-item);
+  --color-sd-active: var(--sd-active);
+  --color-sd-frame: var(--sd-frame);
+  --color-sd-menu: var(--sd-menu);
+  --color-sd-menu-line: var(--sd-menu-line);
+  --color-sd-sidebar: var(--sd-sidebar);
+
+  --color-sd-ink: var(--sd-ink);
+  --color-sd-ink-dull: var(--sd-ink-dull);
+  --color-sd-ink-faint: var(--sd-ink-faint);
+
+  --color-sd-accent: var(--sd-accent);
+  --color-sd-accent-faint: var(--sd-accent-faint);
+  --color-sd-accent-deep: var(--sd-accent-deep);
+
+  --color-ink-sage: var(--ink-sage);
+  --color-ink-amber: var(--ink-amber);
+  --color-ink-coral: var(--ink-coral);
+  --color-ink-violet: var(--ink-violet);
+  --color-ink-blue: var(--ink-blue);
+
+  --radius-sd-thumb: var(--sd-radius-thumb);
+  --radius-sd-crumb: var(--sd-radius-crumb);
+  --radius-sd-chrome: var(--sd-radius-chrome);
+  --radius-sd-tile: var(--sd-radius-tile);
+  --radius-sd-card: var(--sd-radius-card);
+
+  --ease-out-quart: var(--ease-out-quart);
+  --ease-soft-landing: var(--ease-soft-landing);
+  --ease-collapse: var(--ease-collapse);
+  --ease-out-back: var(--ease-out-back);
+}
+
+/* -------------------------------------------------------------------------
+   Base layer
+   ------------------------------------------------------------------------- */
+@layer base {
+  * {
+    border-color: var(--sd-line);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--sd-app);
+    color: var(--sd-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+    letter-spacing: -0.006em;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--sd-accent) 30%, transparent);
+    color: var(--sd-ink);
+  }
+
+  /* Canonical cyan focus ring, everywhere */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--sd-app),
+      0 0 0 4px var(--sd-accent),
+      0 0 12px var(--hud-cyan-glow);
+    border-radius: var(--sd-radius-chrome);
+  }
+
+  /* Quiet, token-driven scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sd-line) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--sd-line);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--sd-active);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Component / idiom classes (the panel grammar)
+   ------------------------------------------------------------------------- */
+@layer components {
+  /* Panel — the elevation recipe: ladder step + hairline + white top bevel */
+  .sd-panel {
+    background: var(--sd-box);
+    border: 1px solid var(--sd-line);
+    border-radius: var(--sd-radius-card);
+    box-shadow: var(--sd-bevel);
+  }
+
+  /* Selective-mono signature: tiny uppercase tracked stat label */
+  .sd-stat-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--sd-ink-faint);
+  }
+
+  .sd-numeral {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Translucent blurred toolbar */
+  .sd-topbar-blur {
+    background: color-mix(in srgb, var(--sd-app) 90%, transparent);
+    backdrop-filter: saturate(120%) blur(var(--sd-blur-topbar));
+    -webkit-backdrop-filter: saturate(120%) blur(var(--sd-blur-topbar));
+    border-bottom: 1px solid var(--sd-divider);
+  }
+
+  /* Floating pill / segmented-control shell */
+  .sd-pill-blur {
+    background: color-mix(in srgb, var(--sd-box) 60%, transparent);
+    backdrop-filter: blur(var(--sd-blur-pill));
+    -webkit-backdrop-filter: blur(var(--sd-blur-pill));
+    border: 1px solid color-mix(in srgb, var(--sd-line) 50%, transparent);
+  }
+
+  /* Raycast overlay fill (command-palette-style dark, theme-agnostic) */
+  .sd-overlay-fill {
+    background: linear-gradient(
+      137deg,
+      rgba(17, 18, 20, 0.75),
+      rgba(12, 13, 15, 0.9)
+    );
+  }
+
+  /* Buttons ---------------------------------------------------------------- */
+  .sd-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--sd-radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 0.5rem 1.1rem;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      transform 100ms var(--ease-out-quart),
+      background-color 200ms var(--ease-out-quart),
+      box-shadow 200ms var(--ease-soft-landing),
+      border-color 150ms var(--ease-out-quart);
+  }
+  .sd-btn:active {
+    transform: translateY(1px);
+  }
+  .sd-btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Primary — accent fill, "lit from above" */
+  .sd-btn-primary {
+    background: var(--sd-accent);
+    color: var(--sd-accent-ink);
+    box-shadow:
+      color-mix(in srgb, var(--sd-accent) 30%, transparent) 0 4px 20px,
+      rgba(255, 255, 255, 0.2) 0 2px 0 inset,
+      rgba(0, 0, 0, 0.1) 0 -2px 0 inset;
+  }
+  .sd-btn-primary:hover {
+    background: var(--sd-accent-faint);
+  }
+  .sd-btn-primary:active {
+    background: var(--sd-accent-deep);
+  }
+
+  /* Ghost — translucent glass with top bevel */
+  .sd-btn-ghost {
+    background: rgb(255 255 255 / 0.1);
+    border: 1px solid rgb(255 255 255 / 0.2);
+    color: var(--sd-ink);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: var(--sd-bevel);
+  }
+  .sd-btn-ghost:hover {
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  /* Quiet / gray CTA — sd-box fill pill */
+  .sd-btn-quiet {
+    background: var(--sd-box);
+    border: 1px solid var(--sd-line);
+    color: var(--sd-ink-dull);
+    box-shadow: var(--sd-bevel);
+  }
+  .sd-btn-quiet:hover {
+    background: var(--sd-hover);
+    color: var(--sd-ink);
+  }
+
+  /* Sidebar surface — darkest, translucent over canvas */
+  .sd-sidebar-surface {
+    background: color-mix(in srgb, var(--sd-sidebar) 65%, transparent);
+    border-right: 1px solid var(--sd-sidebar-divider);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* 45-degree hatched projection segment for progress bars */
+  .sd-hatch {
+    background-image: repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--sd-accent) 35%, transparent) 0 4px,
+      transparent 4px 8px
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Motion — entrance + ambient keyframes. Compositor-only (transform/opacity/
+   filter). Guarded by prefers-reduced-motion below.
+   ------------------------------------------------------------------------- */
+@keyframes sd-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sd-enter-hero {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sd-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4%, -3%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes sd-drift-alt {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+  50% {
+    transform: translate3d(-5%, 4%, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+}
+
+@layer utilities {
+  /* Standard staggered entrance. Set --sd-stagger inline per index. */
+  .sd-enter {
+    opacity: 0;
+    animation: sd-enter 160ms var(--ease-out-quart) forwards;
+    animation-delay: var(--sd-stagger, 0ms);
+    will-change: transform, opacity;
+  }
+
+  .sd-enter-hero {
+    opacity: 0;
+    animation: sd-enter-hero 500ms var(--ease-out-quart) forwards;
+    animation-delay: var(--sd-stagger, 0ms);
+    will-change: transform, opacity;
+  }
+
+  /* Ambient drift loops — 24s / 30s, transform-only, always ≥20s */
+  .sd-drift {
+    animation: sd-drift 24s var(--ease-soft-landing) infinite;
+    will-change: transform;
+  }
+  .sd-drift-alt {
+    animation: sd-drift-alt 30s var(--ease-soft-landing) infinite;
+    will-change: transform;
+  }
+
+  /* Heading punch: lets bright headings read over the ambient glow (brief §6.4) */
+  .sd-punch {
+    filter: drop-shadow(rgba(0, 0, 0, 0.6) 0 12px 38px);
+  }
+
+  /* Soft-landing hover for tiles/cards: shadow + translate, no scale */
+  .sd-soft-hover {
+    transition:
+      box-shadow 200ms var(--ease-soft-landing),
+      border-color 150ms var(--ease-out-quart),
+      background-color 150ms var(--ease-out-quart);
+  }
+}
+
+/* Pause ambient motion on hidden tabs (perf) */
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(body) {
+    /* no-op anchor; ambient runs via utilities above */
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Reduced-motion — kill ALL motion, including ambient (mandatory).
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .sd-enter,
+  .sd-enter-hero {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .sd-drift,
+  .sd-drift-alt {
+    animation: none !important;
+  }
+}
