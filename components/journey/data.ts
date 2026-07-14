@@ -85,7 +85,7 @@ async function loadBundle(todayISO: string): Promise<JourneyBundle> {
     for (const l of logs) logsByDayId[l.plan_day_id] = l;
 
     const evidenceByDayId: Record<string, ActivityEvidence[]> = {};
-    for (const [dayId, list] of evidence) evidenceByDayId[dayId] = list;
+    for (const [dayId, de] of evidence) evidenceByDayId[dayId] = de.activities;
 
     return {
       plan,

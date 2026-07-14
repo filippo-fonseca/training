@@ -163,6 +163,33 @@ function round1(n: number): number {
 }
 
 // -----------------------------------------------------------------------------
+// On-plan vs off-plan taxonomy.
+//
+// A linked run "completes" a planned session only when the day actually planned
+// something a run can satisfy. Per the sealed cron spec, a runnable session is
+// any category that is neither rest nor a strength-only session; rest and
+// strength days are OFF-PLAN targets, so a run on one logs volume for the day
+// but never marks that session done (decision D2). The auto-linker uses the same
+// taxonomy to choose whether to attach a run to a session (on-plan) or to the
+// day itself (off-plan).
+// -----------------------------------------------------------------------------
+
+/** Categories a linked run can NEVER complete (rest / strength-type). */
+const NON_RUNNABLE_CATEGORIES = new Set<string>(['rest', 'strength_only']);
+
+/** True when a session's category is one a linked run completes (on-plan). */
+export function isRunnableSessionCategory(category: string | null | undefined): boolean {
+  return category != null && !NON_RUNNABLE_CATEGORIES.has(category);
+}
+
+/** True when a day has at least one runnable (on-plan) session. */
+export function dayHasRunnableSession(
+  categories: Array<string | null | undefined>,
+): boolean {
+  return categories.some(isRunnableSessionCategory);
+}
+
+// -----------------------------------------------------------------------------
 // Grouping helpers: fold links + activities into evidence keyed by session or
 // by plan day, so each surface builds its evidence map through one code path.
 // Pure: callers supply already-fetched rows. Ordered by activity start_date
@@ -182,13 +209,16 @@ function sortByStart(a: ActivityEvidence, b: ActivityEvidence): number {
   return a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0;
 }
 
-/** Group linked evidence by day_session_id. */
+/** Group linked evidence by day_session_id. Day-level (off-plan) links carry a
+ *  null day_session_id and are skipped here: they belong to the day, not a
+ *  session, so a session picker never surfaces them. */
 export function groupEvidenceBySession(
   links: SessionActivityLink[],
   activitiesById: Map<string, ActivityEvidence>,
 ): Map<string, ActivityEvidence[]> {
   const bySession = new Map<string, ActivityEvidence[]>();
   for (const link of links) {
+    if (!link.day_session_id) continue;
     const ev = activitiesById.get(link.strava_activity_id);
     if (!ev) continue;
     const list = bySession.get(link.day_session_id) ?? [];
@@ -200,31 +230,54 @@ export function groupEvidenceBySession(
 }
 
 /**
+ * A plan day's linked evidence: every activity attached to the day (session-
+ * level plus day-level / off-plan), plus whether ANY of them completes a planned
+ * session. `onPlan` is true when at least one link names a session
+ * (day_session_id set); a day with only day-level links is off-plan.
+ */
+export interface DayEvidence {
+  /** Every linked activity for the day, earliest first (volume + display). */
+  activities: ActivityEvidence[];
+  /** True when >= 1 link is session-level: the day completes a planned session.
+   *  False when the day carries only off-plan (day-level) links. */
+  onPlan: boolean;
+}
+
+/**
  * Group linked evidence by plan_day_id, aggregating across every session of the
- * day. `sessionDay` maps a day_session_id to its plan_day_id. An activity linked
- * to more than one session of the same day (unusual) is de-duplicated by
- * strava id so cumulative totals never double-count.
+ * day AND any day-level (off-plan) links. Each link names its plan day directly
+ * (plan_day_id, since 0009); `sessionDay` is a legacy fallback for a link that
+ * somehow lacks it. An activity linked more than once to the same day (unusual)
+ * is de-duplicated by strava id so cumulative totals never double-count. The
+ * returned `onPlan` flag lets a surface count a completed session without
+ * treating an off-plan run as completing a strength/rest day (decision D2).
  */
 export function groupEvidenceByDay(
   links: SessionActivityLink[],
   activitiesById: Map<string, ActivityEvidence>,
-  sessionDay: Map<string, string>,
-): Map<string, ActivityEvidence[]> {
+  sessionDay: Map<string, string> = new Map(),
+): Map<string, DayEvidence> {
   const seen = new Map<string, Set<number>>();
-  const byDay = new Map<string, ActivityEvidence[]>();
+  const byDay = new Map<string, DayEvidence>();
   for (const link of links) {
-    const planDayId = sessionDay.get(link.day_session_id);
+    const planDayId =
+      link.plan_day_id ??
+      (link.day_session_id ? sessionDay.get(link.day_session_id) : undefined);
     if (!planDayId) continue;
     const ev = activitiesById.get(link.strava_activity_id);
     if (!ev) continue;
+    const entry = byDay.get(planDayId) ?? { activities: [], onPlan: false };
+    // A session-level link completes the planned session; track that regardless
+    // of whether this activity is a new one for the day.
+    if (link.day_session_id) entry.onPlan = true;
     const seenIds = seen.get(planDayId) ?? new Set<number>();
-    if (seenIds.has(ev.stravaId)) continue;
-    seenIds.add(ev.stravaId);
-    seen.set(planDayId, seenIds);
-    const list = byDay.get(planDayId) ?? [];
-    list.push(ev);
-    byDay.set(planDayId, list);
+    if (!seenIds.has(ev.stravaId)) {
+      seenIds.add(ev.stravaId);
+      seen.set(planDayId, seenIds);
+      entry.activities.push(ev);
+    }
+    byDay.set(planDayId, entry);
   }
-  for (const list of byDay.values()) list.sort(sortByStart);
+  for (const entry of byDay.values()) entry.activities.sort(sortByStart);
   return byDay;
 }
