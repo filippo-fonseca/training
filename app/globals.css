@@ -23,6 +23,24 @@
   --sd-glow-medium: 0 0 28px rgb(34 211 238 / 0.16);
   --sd-glow-strong: 0 0 36px rgb(34 211 238 / 0.24);
 
+  /* Dashboard additions (design constitution §5). --sd-glow is the radial
+     cyan wash allowed behind numerals/graphics ONLY (never under running copy);
+     --sd-scrim is the bottom-up dark gradient that guarantees AA text contrast
+     over Strava photos in the spotlight card. */
+  --sd-glow: radial-gradient(
+    circle at 50% 50%,
+    rgb(34 211 238 / 0.16),
+    rgb(34 211 238 / 0.05) 45%,
+    transparent 70%
+  );
+  --sd-scrim: linear-gradient(
+    to top,
+    rgb(7 8 10 / 0.92) 0%,
+    rgb(7 8 10 / 0.72) 34%,
+    rgb(7 8 10 / 0.28) 68%,
+    rgb(7 8 10 / 0) 100%
+  );
+
   /* --- 2b. Dark surface ladder (hue-235 "sd" ladder) --- */
   --sd-app: hsl(235 15% 13%);
   --sd-box: hsl(235 15% 18%);
@@ -92,7 +110,12 @@
    keeping the token layer above as the single source of truth.
    ------------------------------------------------------------------------- */
 @theme inline {
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system,
+  /* Space Grotesk (next/font, --font-grotesk) is the app face; it leads the
+     sans stack so `font-sans` and the body default resolve to Grotesk. A
+     `font-grotesk` utility is exposed too for explicit display numerals. */
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, -apple-system,
+    sans-serif;
+  --font-grotesk: var(--font-grotesk), ui-sans-serif, system-ui, -apple-system,
     sans-serif;
   --font-mono: var(--font-mono), "Fira Code", ui-monospace, Menlo, monospace;
 

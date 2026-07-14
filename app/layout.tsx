@@ -1,13 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+// Space Grotesk is the app face (display numerals, headings, body), exposed as
+// --font-grotesk and wired into the Tailwind --font-sans stack in globals.css.
+// Its variable axis covers the 400/500/700 weights the dashboard uses.
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-sans",
+  variable: "--font-grotesk",
 });
 
+// Mono stays the selective signature: small-caps stat labels, microcopy, and
+// numeric chips.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
@@ -15,9 +20,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Training Tracker",
+  title: "The Comeback · Training Tracker",
   description:
-    "An open-source tracker for structured endurance training plans. Follow the journey.",
+    "Rebuilding from injury to the Baystate Half. In public. A one-page, open-source training dashboard.",
 };
 
 export const viewport: Viewport = {
@@ -29,7 +34,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
       <body>{children}</body>
     </html>
   );
