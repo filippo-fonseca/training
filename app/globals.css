@@ -74,7 +74,11 @@
   /* --- 2c. Ink (text tiers) --- */
   --sd-ink: hsl(235 35% 92%);
   --sd-ink-dull: hsl(235 10% 70%);
-  --sd-ink-faint: hsl(235 10% 55%);
+  /* 61% clears WCAG AA 4.5:1 for the 10-11px mono micro-labels on every
+     surface they sit on (4.82:1 vs --sd-box, 4.67:1 vs --sd-hover, 5.54:1 vs
+     --sd-app; 55% measured only ~3.9:1 on cards) while staying visibly quieter
+     than --sd-ink-dull, so the label hierarchy is preserved. */
+  --sd-ink-faint: hsl(235 10% 61%);
 
   /* --- 2d. Semantic / functional hues (dots + 15% chips ONLY) --- */
   --ink-sage: oklch(68% 0.1 145);
