@@ -96,8 +96,15 @@ export interface CourseGeometry {
  * (laps * loop_km) onto the single drawn loop: a cumulative distance C maps to
  * the point at (C mod loopLength) along the loop, so lap-2 splits (15k, 20k) land
  * on their real physical position on the loop.
+ *
+ * The map now fills the whole (wide) course card as its background, drawn with
+ * preserveAspectRatio="xMidYMid meet" so the fit biases to the card's SHORTER
+ * axis. On a wide tile that is the vertical axis, so `padY` (kept small) governs
+ * how tall the loop renders and `padX` (kept larger) reserves clear horizontal
+ * margin. The result: the whole loop stays visible with margin on every side at
+ * any card aspect from ~1.6:1 to ~3:1, and never shrinks to a tiny center strip.
  */
-function build(width: number, pad: number): CourseGeometry | null {
+function build(width: number, padX: number, padY: number): CourseGeometry | null {
   if (!course) return null;
   const { points, river, landmarks, loop_km, laps } = course;
 
@@ -116,13 +123,13 @@ function build(width: number, pad: number): CourseGeometry | null {
   }
   const dataW = maxX - minX || 1;
   const dataH = maxY - minY || 1;
-  const availW = width - 2 * pad;
+  const availW = width - 2 * padX;
   const scale = availW / dataW;
-  const height = Math.round(dataH * scale + 2 * pad);
+  const height = Math.round(dataH * scale + 2 * padY);
 
   const project = ([lon, lat]: LonLat): readonly [number, number] => [
-    pad + (projX(lon) - minX) * scale,
-    pad + (maxY - lat) * scale, // flip: north is up
+    padX + (projX(lon) - minX) * scale,
+    padY + (maxY - lat) * scale, // flip: north is up
   ];
 
   const toPath = (pts: LonLat[]) =>
@@ -176,7 +183,9 @@ function build(width: number, pad: number): CourseGeometry | null {
   };
 }
 
-/** Memoized geometry for the standard 400-wide viewBox. The generous pad zooms
- * the whole loop out so it sits with clear margin inside the card (and so the
- * traveling avatar never clips the viewBox edge). */
-export const courseGeometry: CourseGeometry | null = build(400, 34);
+/** Memoized geometry for the standard 400-wide viewBox. A larger horizontal pad
+ * (30) reserves clear left/right margin; a smaller vertical pad (18) lets the
+ * loop fill most of the shorter axis, so when the map is fit to a wide card with
+ * xMidYMid meet the loop reads large with margin on every side (and the traveling
+ * avatar never clips the viewBox edge). */
+export const courseGeometry: CourseGeometry | null = build(400, 30, 18);

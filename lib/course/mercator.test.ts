@@ -95,3 +95,41 @@ test("every route point projects within the image bounds", () => {
     assert.ok(p.y >= 0 && p.y <= STATIC_MAP_HEIGHT);
   }
 });
+
+// The static map fills the card via object-contain (StaticCourseMap), so the
+// image is scaled by min(cardW/imgW, cardH/imgH) and centered, and the drawn
+// polyline is never cropped. Since the static mode cannot be exercised without a
+// Maps key, this projects every route point through that exact contain transform
+// into a range of plausible card aspects (1.6:1 to 3:1) and asserts the whole
+// loop lands inside the visible card with clear margin. This is the fit proof.
+test("the loop stays fully visible with margin under object-contain at every card aspect", () => {
+  const view = chooseStaticView(points);
+  const cards: Array<[number, number]> = [
+    [700, 438], // 1.60:1 (narrow end)
+    [700, 350], // 2.00:1
+    [700, 304], // 2.30:1
+    [700, 269], // 2.60:1 (measured course cell at 1440x900)
+    [700, 233], // 3.00:1 (wide end)
+  ];
+  for (const [cardW, cardH] of cards) {
+    // object-contain: scale to the smaller axis, center the image in the card.
+    const scale = Math.min(cardW / STATIC_MAP_WIDTH, cardH / STATIC_MAP_HEIGHT);
+    const offX = (cardW - STATIC_MAP_WIDTH * scale) / 2;
+    const offY = (cardH - STATIC_MAP_HEIGHT * scale) / 2;
+    // Margin the loop must clear on every side of the CARD (8% of the tighter axis).
+    const margin = 0.08 * Math.min(cardW, cardH);
+    for (const [lat, lng] of points) {
+      const ip = projectToImage(lat, lng, view);
+      const cx = offX + ip.x * scale;
+      const cy = offY + ip.y * scale;
+      assert.ok(
+        cx >= margin && cx <= cardW - margin,
+        `${cardW}x${cardH}: point x=${cx.toFixed(1)} inside the margin band`,
+      );
+      assert.ok(
+        cy >= margin && cy <= cardH - margin,
+        `${cardW}x${cardH}: point y=${cy.toFixed(1)} inside the margin band`,
+      );
+    }
+  }
+});

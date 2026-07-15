@@ -16,9 +16,17 @@
 export const TILE_SIZE = 256;
 
 /** Nominal Static Maps request size (the &size= base; &scale=2 only doubles DPI,
- * not the covered area, so projection math uses these base dimensions). */
-export const STATIC_MAP_WIDTH = 640;
-export const STATIC_MAP_HEIGHT = 360;
+ * not the covered area, so projection math uses these base dimensions).
+ *
+ * The course cell is a wide bento tile (lg grid rows 5-6 x cols 1-6, ~2.6:1 at
+ * 1440x900). The image is requested at 560x224 (2.5:1): matching the cell's
+ * aspect keeps the object-contain letterbox to a hair (~4% of the longer axis,
+ * and map-colored so it is invisible), while sizing the frame tight to the loop
+ * pulls the integer-zoom fit to ~73% of the frame height, so the whole loop
+ * renders large and uncropped with a comfortable ~13% margin on every side. See
+ * chooseStaticView for the margin guarantee and mercator.test for the fit proof. */
+export const STATIC_MAP_WIDTH = 560;
+export const STATIC_MAP_HEIGHT = 224;
 
 /** Comfortable margin: the loop must leave at least this fraction of the image
  * clear on the tighter axis, else we step one zoom level further out. */
