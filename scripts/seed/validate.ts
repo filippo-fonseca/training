@@ -18,6 +18,10 @@ const SEED = resolve(ROOT, 'supabase/seed.sql');
 const EXPECTED_WEEKLY_KM = [16, 20, 25, 30, 35, 31, 40, 45, 41, 54, 57, 58, 43, 34.1];
 const EXPECTED_LONG_RUN = [5.2, 7, 8, 10, 12, 9, 14, 16, 13, 21.1, 18, 20, 14, 21.1];
 const EXPECTED_TOTAL_KM = 529.1;
+// Ruling D11: this app tracks runs. All 41 "Upper" lifting secondaries are
+// dropped at generation time, so day_sessions falls from 196 to 155
+// (98 primaries + 57 surviving secondaries). Km totals are unchanged.
+const EXPECTED_SESSIONS = 155;
 
 const failures: string[] = [];
 const notes: string[] = [];
@@ -93,16 +97,27 @@ for (const d of days) {
 }
 check(approx(prevCum, EXPECTED_TOTAL_KM), `Final cumulative ${prevCum} != ${EXPECTED_TOTAL_KM}`);
 
-// 7. No missing sessions: every day has a primary + secondary, primary has a title.
+// 7. No missing primaries: every day has a titled primary with a category and
+// prescription. Post-D11 a secondary is optional (lifting-only days now have no
+// secondary), but any surviving secondary must not be dropped upper-body work.
 for (const d of days) {
   const primary = d.sessions.find((s) => s.slot === 'primary');
-  const secondary = d.sessions.find((s) => s.slot === 'secondary');
   check(!!primary, `Day ${d.date}: missing primary session`);
-  check(!!secondary, `Day ${d.date}: missing secondary session`);
   check(!!primary && primary.title.length > 0, `Day ${d.date}: empty primary title`);
   check(!!primary && !!primary.prescriptionText, `Day ${d.date}: missing prescription`);
   check(!!primary && !!primary.category, `Day ${d.date}: missing category`);
 }
+
+// 7b. Ruling D11: no "Upper" secondary survives; total sessions == 155.
+const upperSecondaries = days.flatMap((d) =>
+  d.sessions.filter((s) => s.slot === 'secondary' && /^Upper\b/.test(s.title)),
+);
+check(upperSecondaries.length === 0, `D11: found ${upperSecondaries.length} surviving Upper secondaries`);
+const sessionCount = days.reduce((n, d) => n + d.sessions.length, 0);
+check(
+  sessionCount === EXPECTED_SESSIONS,
+  `D11: expected ${EXPECTED_SESSIONS} sessions, got ${sessionCount}`,
+);
 
 // 8. Run days per week match the parsed run-day count (>0 km primary run sessions).
 const RUN_CATEGORIES = new Set(['easy_run', 'long_run', 'quality_run', 'race']);
@@ -167,7 +182,7 @@ if (existsSync(SEED)) {
   const count = (re: RegExp) => (sql.match(re) ?? []).length;
   check(/^begin;/m.test(sql) && /^commit;/m.test(sql), 'seed.sql missing begin/commit');
   check(count(/insert into public\.plan_days /g) === 98, `seed.sql should upsert 98 plan_days, got ${count(/insert into public\.plan_days /g)}`);
-  check(count(/insert into public\.day_sessions /g) === 196, `seed.sql should upsert 196 day_sessions, got ${count(/insert into public\.day_sessions /g)}`);
+  check(count(/insert into public\.day_sessions /g) === EXPECTED_SESSIONS, `seed.sql should upsert ${EXPECTED_SESSIONS} day_sessions, got ${count(/insert into public\.day_sessions /g)}`);
   check(count(/insert into public\.plan_weeks /g) === 14, `seed.sql should upsert 14 plan_weeks`);
   check(count(/insert into public\.plan_phases /g) === 11, `seed.sql should upsert 11 plan_phases`);
   check(count(/insert into public\.milestones /g) === 9, `seed.sql should upsert 9 milestones`);
@@ -187,6 +202,6 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `\nVALIDATION PASSED: 14 weeks, 98 days, 196 sessions, ` +
+  `\nVALIDATION PASSED: 14 weeks, 98 days, ${EXPECTED_SESSIONS} sessions, ` +
     `${EXPECTED_TOTAL_KM} km total, weekly sums match docs, no missing sessions.`,
 );

@@ -211,33 +211,9 @@ const day1Primary: DaySession = {
   updated_at: TS,
 };
 
-const day1Secondary: DaySession = {
-  id: "9935a596-f46e-5563-91cf-4252c037fb87",
-  plan_day_id: DAY1_ID,
-  slot: "secondary",
-  title: "Upper A",
-  category: null,
-  is_quality: false,
-  role: null,
-  prescription_text:
-    "Upper A - bench press 3x5-8; chest-supported row 3x6-10; incline DB press 2x8-12; pulldown 2x8-12; optional arms 2x10-15. RPE 7, 2-3 reps in reserve.",
-  distance_km: null,
-  duration_text: null,
-  duration_min_minutes: null,
-  duration_max_minutes: null,
-  pace_text: null,
-  pace_min_s_per_km: null,
-  pace_max_s_per_km: null,
-  rpe_text: null,
-  hr_text: null,
-  terrain: null,
-  cue: null,
-  fuel: null,
-  shoes: null,
-  completion_planned: null,
-  created_at: TS,
-  updated_at: TS,
-};
+// Ruling D11: this app tracks runs, so the day-1 "Upper A" lifting secondary is
+// dropped (as it is at seed-generation time). Opening day now has a run primary
+// only and no secondary.
 
 function mkMilestone(
   index: number,
@@ -288,7 +264,7 @@ export function fixtureBundle(): JourneyBundle {
     milestones,
     todayDetail: {
       day: day1,
-      sessions: [day1Primary, day1Secondary],
+      sessions: [day1Primary],
       alternatives: [],
     },
     weekDays,
