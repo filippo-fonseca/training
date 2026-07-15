@@ -12,6 +12,7 @@
  * to the original stylized diagram (kept below), so the widget never breaks.
  */
 import { course, courseGeometry } from "./course-geo";
+import { CourseAvatar } from "./course-avatar";
 
 interface CourseSvgProps {
   className?: string;
@@ -139,6 +140,11 @@ export function CourseSvg({ className, variant = "mini" }: CourseSvgProps) {
           START / FINISH
         </text>
       </g>
+
+      {/* The runner: the author's avatar travels the loop forever (parked at the
+          START / FINISH point under prefers-reduced-motion). Drawn last so it
+          rides on top of the route line. */}
+      <CourseAvatar points={g.routePoints} radius={detail ? 8 : 9} />
     </svg>
   );
 }

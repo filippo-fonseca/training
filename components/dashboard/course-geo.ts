@@ -73,6 +73,9 @@ export interface CourseGeometry {
   height: number;
   /** SVG path "M ... L ..." for the route polyline. */
   routePath: string;
+  /** The route polyline as projected [x, y] points (same space as routePath),
+   * so an animated avatar can traverse the exact drawn line. */
+  routePoints: ReadonlyArray<readonly [number, number]>;
   /** SVG path for the river centreline (stroked thick as a band). */
   riverPath: string;
   /** Projected landmark points. */
@@ -161,6 +164,7 @@ function build(width: number, pad: number): CourseGeometry | null {
     width,
     height,
     routePath: toPath(points),
+    routePoints: points.map(project),
     riverPath: toPath(river),
     landmarks: {
       start: project(landmarks.start_finish),
@@ -172,5 +176,7 @@ function build(width: number, pad: number): CourseGeometry | null {
   };
 }
 
-/** Memoized geometry for the standard 400-wide viewBox. */
-export const courseGeometry: CourseGeometry | null = build(400, 16);
+/** Memoized geometry for the standard 400-wide viewBox. The generous pad zooms
+ * the whole loop out so it sits with clear margin inside the card (and so the
+ * traveling avatar never clips the viewBox edge). */
+export const courseGeometry: CourseGeometry | null = build(400, 34);
