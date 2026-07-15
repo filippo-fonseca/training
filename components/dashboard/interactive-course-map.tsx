@@ -25,63 +25,59 @@ declare global {
   }
 }
 
-const SCRIPT_ID = "google-maps-js-api";
+const BOOTSTRAP_ID = "google-maps-bootstrap";
 let loaderPromise: Promise<any> | null = null;
 
+// Google's OFFICIAL inline bootstrap loader (the documented "dynamic library
+// import" IIFE). Unlike a plain script-src injection, this defines
+// google.maps.importLibrary SYNCHRONOUSLY, before any network fetch: the moment
+// this inline script executes on insertion, importLibrary is a callable stub
+// that lazily loads the real API on first use. That removes the race where the
+// namespace was probed at script `onload` but the async bootstrap had not yet
+// run. The IIFE is invoked with { key, v } supplied below.
+const GOOGLE_MAPS_BOOTSTRAP =
+  '(g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})';
+
 /**
- * Inject the Maps JS API once and resolve with google.maps ONLY after the
- * libraries we use have been imported. Under the async loader
- * (`loading=async`), the constructors (Map, Polyline, Marker, …) are not
- * available on the `google.maps` namespace at script `onload`; they must be
- * pulled in via `google.maps.importLibrary(...)` first. We await the `maps`
- * library (Map, Polyline, LatLngBounds, SymbolPath) and the `marker` library
- * (Marker) so callers can construct everything synchronously once this
- * resolves. The awaits populate the `google.maps` namespace, so we resolve
- * with `window.google.maps`.
+ * Inject the official inline bootstrap once and resolve with google.maps ONLY
+ * after the libraries we use have been imported. The bootstrap installs
+ * google.maps.importLibrary synchronously on insertion, so we can immediately
+ * call it. We await the `maps` library (Map, Polyline, LatLngBounds,
+ * SymbolPath) and the `marker` library (Marker) so callers can construct
+ * everything synchronously once this resolves. Those awaits populate the
+ * google.maps namespace, so we resolve with window.google.maps. On any failure
+ * (bootstrap throw, importLibrary rejection) we clear the memoized promise so a
+ * later overlay open can retry.
  */
 function loadGoogleMaps(key: string): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
   if (loaderPromise) return loaderPromise;
 
-  loaderPromise = new Promise<void>((resolve, reject) => {
-    if (window.google?.maps?.importLibrary) {
-      resolve();
-      return;
-    }
-    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-    if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => {
-        loaderPromise = null;
-        reject(new Error("maps script error"));
-      });
-      return;
-    }
-    const s = document.createElement("script");
-    s.id = SCRIPT_ID;
-    s.async = true;
-    s.src =
-      "https://maps.googleapis.com/maps/api/js?loading=async&v=weekly&key=" +
-      encodeURIComponent(key);
-    s.onload = () => resolve();
-    s.onerror = () => {
-      loaderPromise = null;
-      reject(new Error("maps script error"));
-    };
-    document.head.appendChild(s);
-  })
-    .then(async () => {
+  loaderPromise = new Promise<any>((resolve, reject) => {
+    try {
+      if (!window.google?.maps?.importLibrary) {
+        const config = JSON.stringify({ key, v: "weekly" });
+        const s = document.createElement("script");
+        s.id = BOOTSTRAP_ID;
+        // Inline script: executes synchronously on insertion, defining
+        // google.maps.importLibrary before we call it just below.
+        s.text = GOOGLE_MAPS_BOOTSTRAP + "(" + config + ");";
+        document.head.appendChild(s);
+      }
       const importLibrary = window.google?.maps?.importLibrary;
       if (!importLibrary) throw new Error("maps importLibrary unavailable");
       // Import the libraries whose classes we construct below, then hand back
       // the now-populated google.maps namespace.
-      await Promise.all([importLibrary("maps"), importLibrary("marker")]);
-      return window.google.maps;
-    })
-    .catch((err) => {
-      loaderPromise = null;
-      throw err;
-    });
+      Promise.all([importLibrary("maps"), importLibrary("marker")])
+        .then(() => resolve(window.google.maps))
+        .catch(reject);
+    } catch (err) {
+      reject(err);
+    }
+  }).catch((err) => {
+    loaderPromise = null;
+    throw err;
+  });
   return loaderPromise;
 }
 
@@ -156,6 +152,9 @@ export function InteractiveCourseMap({ className }: { className?: string }) {
         );
       })
       .catch((err) => {
+        // Clear the memoized loader so a later overlay open can retry, even
+        // when the failure was a construction throw after a successful load.
+        loaderPromise = null;
         console.error(
           "[course-map] interactive map failed, falling back to SVG:",
           err,
