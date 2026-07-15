@@ -50,7 +50,7 @@ export function CountdownWidget({ data, dayNumber, totalDays, onOpen }: Props) {
       <div className="relative flex min-h-0 flex-1 items-center">
         <span
           aria-hidden
-          className="pointer-events-none absolute left-0 top-1/2 -z-0 h-[130%] w-[70%] -translate-y-1/2"
+          className="pointer-events-none absolute left-0 top-1/2 -z-0 aspect-square h-[130%] -translate-x-1/4 -translate-y-1/2 rounded-full"
           style={{ background: "var(--sd-glow)" }}
         />
         <span
