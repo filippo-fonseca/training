@@ -68,6 +68,23 @@ export function toActivityEvidence(a: StravaActivity): ActivityEvidence {
   };
 }
 
+/**
+ * The set of VERIFIED (linked) activities for a plan, newest first, as curated
+ * evidence. "Verified" == the activity's row id appears in the plan's link set
+ * (session-level or day-level / off-plan), mirroring loadSpotlight's filter and
+ * getLatestVerifiedActivity. Input order is preserved (the readers order by
+ * start_date DESC), so the caller gets latest-first browsing for free. Each row
+ * passes through toActivityEvidence, so titles honour englishTitle and only the
+ * curated public-safe fields cross the boundary.
+ */
+export function selectVerifiedActivities(
+  activities: StravaActivity[],
+  links: SessionActivityLink[],
+): ActivityEvidence[] {
+  const linkedIds = new Set(links.map((l) => l.strava_activity_id));
+  return activities.filter((a) => linkedIds.has(a.id)).map(toActivityEvidence);
+}
+
 /** Cumulative totals across a set of linked activities. */
 export interface CumulativeEvidence {
   count: number;

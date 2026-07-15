@@ -40,6 +40,11 @@ export interface WeeklyKm {
   endDate: string | null;
   phaseLabel: string | null;
   plannedKm: number;
+  /** Lower / upper bound of the week's planned km range (the plan's prescribed
+   *  window), when the plan_weeks row carries one. Additive for the dashboard's
+   *  week-volume switcher, which shows a "logged vs range" gauge per week. */
+  rangeMinKm?: number | null;
+  rangeMaxKm?: number | null;
   /** Sum of logged actual km for the week, or null when nothing is logged yet. */
   actualKm: number | null;
   /** Count of plan days in the week that carry a session log. */
@@ -143,6 +148,8 @@ export function computeWeeklyKm(
         endDate: week.end_date,
         phaseLabel: week.phase_label,
         plannedKm: round1(planned),
+        rangeMinKm: week.range_min_km,
+        rangeMaxKm: week.range_max_km,
         actualKm: anyLogged ? round1(actualSum) : null,
         loggedDays,
         isCutback: week.is_cutback,

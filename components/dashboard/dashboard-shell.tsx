@@ -23,6 +23,7 @@ import { HeatmapMiniWidget } from "./widgets/heatmap-mini-widget";
 import { StatTile } from "./widgets/stat-tile";
 import { NextMilestoneChip } from "./widgets/next-milestone-chip";
 import { DayBrowseOverlay } from "./overlays/day-browse-overlay";
+import { SpotlightBrowseOverlay } from "./overlays/spotlight-browse-overlay";
 
 const OVERLAY_KEYS: OverlayKey[] = [
   "journey",
@@ -51,6 +52,13 @@ export function DashboardShell({ data, overlays }: Props) {
   // on today it keeps the rich server-rendered detail; on any other day it shows
   // the compact summary + a full-detail link.
   const [selectedDate, setSelectedDate] = useState(data.todayISO);
+  // The week-volume switcher's selection: which of weeks 1..14 the gauge shows.
+  const [selectedWeek, setSelectedWeek] = useState(data.currentWeekIndex);
+  // The next-milestone switcher's selection: an index into the 13-entry timeline.
+  const [selectedMilestone, setSelectedMilestone] = useState(data.nextMilestoneIndex);
+  // The spotlight switcher's selection: a verified run's strava id (null = latest).
+  const latestRunId = data.spotlightVerified[0]?.stravaId ?? null;
+  const [selectedRun, setSelectedRun] = useState<number | null>(latestRunId);
 
   // Open on load when a deep-link hash is present, and keep in sync with the
   // hash on manual edits / history navigation.
@@ -116,7 +124,14 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "spotlight",
         cls: "lg:[grid-area:1/7/5/13] max-lg:min-h-[15rem]",
-        node: <SpotlightWidget spotlight={data.spotlight} onOpen={open} />,
+        node: (
+          <SpotlightWidget
+            verified={data.spotlightVerified}
+            selectedId={selectedRun}
+            onSelectRun={setSelectedRun}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "stat-1",
@@ -160,7 +175,15 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "milestone",
         cls: "lg:[grid-area:4/4/5/7] max-lg:min-h-[5rem]",
-        node: <NextMilestoneChip data={data.nextMilestone} onOpen={open} />,
+        node: (
+          <NextMilestoneChip
+            milestones={data.milestones}
+            nextIndex={data.nextMilestoneIndex}
+            selectedIndex={selectedMilestone}
+            onSelect={setSelectedMilestone}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "course",
@@ -170,7 +193,16 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "week",
         cls: "lg:[grid-area:5/7/7/10] max-lg:min-h-[11rem]",
-        node: <WeekVolumeWidget data={data.week} onOpen={open} />,
+        node: (
+          <WeekVolumeWidget
+            weeks={data.weeks}
+            currentWeekIndex={data.currentWeekIndex}
+            totalWeeks={data.countdown.totalWeeks}
+            selectedWeekIndex={selectedWeek}
+            onSelectWeek={setSelectedWeek}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "heatmap",
@@ -178,7 +210,7 @@ export function DashboardShell({ data, overlays }: Props) {
         node: <HeatmapMiniWidget data={data.heatmap} onOpen={open} />,
       },
     ],
-    [data, open, selectedDate],
+    [data, open, selectedDate, selectedWeek, selectedMilestone, selectedRun],
   );
 
   // The Today overlay follows the day browser: today keeps its rich server node;
@@ -186,6 +218,14 @@ export function DashboardShell({ data, overlays }: Props) {
   const browsedDay =
     active === "today" && selectedDate !== data.todayISO
       ? data.days.find((d) => d.date === selectedDate) ?? null
+      : null;
+
+  // The Spotlight overlay follows the run browser: the latest run keeps its rich
+  // server-rendered node; any other verified run shows a client overlay whose
+  // media, stats, and outbound Strava link point at the selected run.
+  const browsedRun =
+    active === "spotlight" && selectedRun != null && selectedRun !== latestRunId
+      ? data.spotlightVerified.find((a) => a.stravaId === selectedRun) ?? null
       : null;
 
   return (
@@ -208,6 +248,8 @@ export function DashboardShell({ data, overlays }: Props) {
       >
         {browsedDay ? (
           <DayBrowseOverlay day={browsedDay} totalDays={data.totalDays} />
+        ) : browsedRun ? (
+          <SpotlightBrowseOverlay selected={browsedRun} all={data.spotlightVerified} />
         ) : active ? (
           overlays[active]
         ) : null}
