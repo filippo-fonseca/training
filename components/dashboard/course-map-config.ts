@@ -8,6 +8,14 @@
  */
 import { course, type LonLat } from "./course-geo";
 import { encodePolyline } from "@/lib/course/polyline";
+import {
+  chooseStaticView,
+  projectToImage,
+  STATIC_MAP_HEIGHT,
+  STATIC_MAP_WIDTH,
+  type Point,
+  type StaticView,
+} from "@/lib/course/mercator";
 
 // Next inlines NEXT_PUBLIC_* at build time; reference it literally.
 const rawKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -27,6 +35,26 @@ const toLatLng = (p: LonLat): [number, number] => [p[1], p[0]];
 export const routeLatLng: Array<[number, number]> = course
   ? course.points.map(toLatLng)
   : [];
+
+/**
+ * The explicit Static Maps view (center + integer zoom) for the loop, from
+ * standard Web Mercator fit math with a comfortable margin (see lib/course/
+ * mercator). Null when geometry is missing. Using an explicit view (rather than
+ * the API's auto-fit) both zooms the loop out with margin AND lets us project
+ * every route point to an exact image pixel for the overlaid running avatar.
+ */
+export const courseStaticView: StaticView | null =
+  routeLatLng.length > 0
+    ? chooseStaticView(routeLatLng, STATIC_MAP_WIDTH, STATIC_MAP_HEIGHT)
+    : null;
+
+/** The route polyline projected to nominal static-map pixels (0..640 x 0..360)
+ * at `courseStaticView`, so the overlaid avatar tracks the drawn line. */
+export const projectedRoutePoints: Point[] | null = courseStaticView
+  ? routeLatLng.map(([lat, lng]) =>
+      projectToImage(lat, lng, courseStaticView!, STATIC_MAP_WIDTH, STATIC_MAP_HEIGHT),
+    )
+  : null;
 
 /** Landmark points as [lat, lng]. */
 export const landmarkLatLng = course
@@ -72,24 +100,29 @@ const STATIC_STYLE_PARAMS = [
 ];
 
 /**
- * Build the Static Maps API URL for the mini widget. The loop is passed as an
- * encoded polyline (no center/zoom, so the API auto-fits the path). Returns null
- * when the key or geometry is missing (caller then renders the SVG).
+ * Build the Static Maps API URL for the mini widget. Uses an EXPLICIT center +
+ * integer zoom (courseStaticView) so the whole loop sits with a comfortable
+ * margin AND every route point projects to a known image pixel (the overlaid
+ * avatar rides the line). The loop itself is drawn via an encoded polyline.
+ * Returns null when the key or geometry is missing (caller then renders the SVG).
  *
  * Shape (KEY redacted):
  *   https://maps.googleapis.com/maps/api/staticmap
- *     ?size=640x360&scale=2
+ *     ?center=42.6xxxxx,-71.3xxxxx&zoom=13&size=640x360&scale=2
  *     &path=color:0x34c3e0ff|weight:4|enc:<ENCODED_LOOP>
  *     &style=element:geometry|color:0x0e1116  (x9)
  *     &key=KEY
  */
 export function buildStaticMapUrl(
   key: string | undefined = mapsApiKey,
-  size = "640x360",
+  size = `${STATIC_MAP_WIDTH}x${STATIC_MAP_HEIGHT}`,
 ): string | null {
-  if (!key || routeLatLng.length === 0) return null;
+  if (!key || routeLatLng.length === 0 || !courseStaticView) return null;
   const enc = encodePolyline(routeLatLng);
+  const { center, zoom } = courseStaticView;
   const params = [
+    `center=${center.lat.toFixed(6)},${center.lng.toFixed(6)}`,
+    `zoom=${zoom}`,
     `size=${size}`,
     "scale=2",
     "format=png",
