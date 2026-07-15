@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   dayFamilies,
+  isRunSport,
   matchActivities,
   nyCalendarDate,
   stravaSportFamily,
@@ -86,6 +87,31 @@ test('matchActivities links both a run and a ride on a brick day', () => {
   const { matched } = matchActivities(days, acts);
   assert.equal(matched.get(1), 'day-1');
   assert.equal(matched.get(2), 'day-1');
+});
+
+test('isRunSport keeps run-family and drops non-runs', () => {
+  // Run family (D11): kept.
+  assert.equal(isRunSport('Run'), true);
+  assert.equal(isRunSport('TrailRun'), true);
+  assert.equal(isRunSport('VirtualRun'), true);
+  // Everything else: dropped.
+  assert.equal(isRunSport('Ride'), false);
+  assert.equal(isRunSport('HIIT'), false);
+  assert.equal(isRunSport('Workout'), false);
+  assert.equal(isRunSport('Walk'), false);
+  assert.equal(isRunSport(null), false);
+  assert.equal(isRunSport(undefined), false);
+});
+
+test('runs-only picker predicate keeps runs and any already-linked non-run', () => {
+  // Mirrors getStravaPickerData: keep run-family OR an activity that already has
+  // a link, so existing links are never hidden.
+  const linked = new Set<string>(['row-ride-linked']);
+  const keep = (id: string, sport: string | null) => isRunSport(sport) || linked.has(id);
+
+  assert.equal(keep('row-run', 'Run'), true); // run: kept
+  assert.equal(keep('row-ride', 'Ride'), false); // unlinked non-run: dropped
+  assert.equal(keep('row-ride-linked', 'Ride'), true); // linked non-run: survives
 });
 
 test('matchActivities marks other-sport and dateless activities unmatched', () => {
