@@ -28,10 +28,10 @@
      --sd-scrim is the bottom-up dark gradient that guarantees AA text contrast
      over Strava photos in the spotlight card. */
   --sd-glow: radial-gradient(
-    circle at 50% 50%,
-    rgb(34 211 238 / 0.16),
-    rgb(34 211 238 / 0.05) 45%,
-    transparent 70%
+    circle closest-side at 50% 50%,
+    rgb(34 211 238 / 0.13),
+    rgb(34 211 238 / 0.05) 42%,
+    transparent 72%
   );
   --sd-scrim: linear-gradient(
     to top,
