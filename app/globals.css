@@ -105,6 +105,30 @@
   --sd-blur-topbar: 18px;
   --sd-blur-pill: 8px;
   --sd-blur-overlay: 32px;
+  --sd-blur-card: 14px; /* frosted-glass panel blur */
+
+  /* --- 4b. Liquid-glass panel recipe (chrome only; consumes --sd-box) ---
+     The panel fill is --sd-box held at 78% opacity so the ambient wash below
+     bleeds through the blur. 78% keeps AA for every text token even over the
+     lightest ambient spot: worst measured is --sd-ink-faint at 4.53:1 over an
+     L24 cyan backdrop (>= 4.5), and 4.71:1 over the realistic ~L20 bleed;
+     --sd-ink-dull >= 6.0:1 and --sd-ink >= 10.8:1 everywhere. */
+  --sd-glass-panel: color-mix(in srgb, var(--sd-box) 78%, transparent);
+  --sd-glass-panel-hover: color-mix(in srgb, var(--sd-box) 88%, transparent);
+  /* Glass edge: the hairline lifted toward white so it catches light. */
+  --sd-glass-border: color-mix(in srgb, white 10%, var(--sd-line));
+  /* Barely-there diagonal sheen, top-left to nothing. */
+  --sd-glass-sheen: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.055) 0%,
+    rgba(255, 255, 255, 0) 42%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  /* Crisp top-edge inner highlight (brighter than --sd-bevel) + soft lift. */
+  --sd-glass-shadow:
+    rgba(255, 255, 255, 0.22) 0 1px 0 inset,
+    0 1px 2px rgb(0 0 0 / 0.18),
+    0 10px 28px rgb(0 0 0 / 0.26);
 
   /* --- 5. Motion easings (tokens, D4) --- */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -194,6 +218,41 @@
     letter-spacing: -0.006em;
   }
 
+  /* Ambient backdrop so the glass panels have something to refract. A fixed,
+     pointer-events-free wash of three very soft radials in the cyan accent
+     family plus one neutral, each only a few percent lift over --sd-app (L13).
+     It sits behind all content (z-index -1, below the app background paint) so
+     blurred color bleeds through card edges without ever lifting text contrast
+     below AA. Stays dark, calm, and non-distracting. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        60% 55% at 18% 12%,
+        rgb(34 211 238 / 0.05) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        55% 60% at 88% 24%,
+        rgb(34 211 238 / 0.04) 0%,
+        transparent 62%
+      ),
+      radial-gradient(
+        70% 65% at 72% 96%,
+        rgb(80 140 200 / 0.035) 0%,
+        transparent 66%
+      ),
+      radial-gradient(
+        50% 50% at 30% 88%,
+        rgb(120 130 150 / 0.03) 0%,
+        transparent 60%
+      );
+  }
+
   ::selection {
     background: color-mix(in srgb, var(--sd-accent) 30%, transparent);
     color: var(--sd-ink);
@@ -268,12 +327,19 @@
    Component / idiom classes (the panel grammar)
    ------------------------------------------------------------------------- */
 @layer components {
-  /* Panel — the elevation recipe: ladder step + hairline + white top bevel */
+  /* Panel — liquid-glass recipe: translucent --sd-box fill over the ambient
+     wash, saturated backdrop blur, a crisp white top-edge highlight, a soft
+     outer lift, and a barely-there diagonal sheen. The hairline reads as a
+     glass edge. Falls back to the opaque ladder recipe under
+     prefers-reduced-transparency / prefers-contrast: more (below). */
   .sd-panel {
-    background: var(--sd-box);
-    border: 1px solid var(--sd-line);
+    background-color: var(--sd-glass-panel);
+    background-image: var(--sd-glass-sheen);
+    border: 1px solid var(--sd-glass-border);
     border-radius: var(--sd-radius-card);
-    box-shadow: var(--sd-bevel);
+    box-shadow: var(--sd-glass-shadow);
+    backdrop-filter: saturate(140%) blur(var(--sd-blur-card));
+    -webkit-backdrop-filter: saturate(140%) blur(var(--sd-blur-card));
   }
 
   /* Selective-mono signature: tiny uppercase tracked stat label */
@@ -291,20 +357,22 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Translucent blurred toolbar */
+  /* Translucent blurred toolbar — nudged into the glass idiom with a richer
+     saturate and a faint top-edge highlight; geometry unchanged. */
   .sd-topbar-blur {
     background: color-mix(in srgb, var(--sd-app) 90%, transparent);
-    backdrop-filter: saturate(120%) blur(var(--sd-blur-topbar));
-    -webkit-backdrop-filter: saturate(120%) blur(var(--sd-blur-topbar));
+    backdrop-filter: saturate(140%) blur(var(--sd-blur-topbar));
+    -webkit-backdrop-filter: saturate(140%) blur(var(--sd-blur-topbar));
     border-bottom: 1px solid var(--sd-divider);
+    box-shadow: rgba(255, 255, 255, 0.06) 0 1px 0 inset;
   }
 
-  /* Floating pill / segmented-control shell */
+  /* Floating pill / segmented-control shell — glass edge to match the panels. */
   .sd-pill-blur {
     background: color-mix(in srgb, var(--sd-box) 60%, transparent);
-    backdrop-filter: blur(var(--sd-blur-pill));
-    -webkit-backdrop-filter: blur(var(--sd-blur-pill));
-    border: 1px solid color-mix(in srgb, var(--sd-line) 50%, transparent);
+    backdrop-filter: saturate(140%) blur(var(--sd-blur-pill));
+    -webkit-backdrop-filter: saturate(140%) blur(var(--sd-blur-pill));
+    border: 1px solid color-mix(in srgb, white 8%, var(--sd-line) 55%);
   }
 
   /* Raycast overlay fill (command-palette-style dark, theme-agnostic) */
@@ -582,10 +650,13 @@
   }
   .sd-card-hover:hover {
     transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--sd-accent) 34%, var(--sd-line));
+    /* Glass hover: less transparent + a brighter glass edge, replacing the old
+       flat fill. The press scale (below) is untouched. */
+    background-color: var(--sd-glass-panel-hover);
+    border-color: color-mix(in srgb, var(--sd-accent) 34%, var(--sd-glass-border));
     box-shadow:
-      var(--sd-bevel),
-      0 10px 26px rgb(0 0 0 / 0.22),
+      rgba(255, 255, 255, 0.3) 0 1px 0 inset,
+      0 14px 34px rgb(0 0 0 / 0.3),
       var(--sd-glow-subtle);
   }
   .sd-card-hover:active {
@@ -629,6 +700,63 @@
 @media (prefers-reduced-motion: no-preference) {
   :root:has(body) {
     /* no-op anchor; ambient runs via utilities above */
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Reduced-transparency — fall back to the opaque ladder recipe. No backdrop
+   blur, no translucency, no sheen; keep the hairline and radius. This is the
+   pre-glass look, guaranteed AA over --sd-box.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-transparency: reduce) {
+  .sd-panel {
+    background-color: var(--sd-box);
+    background-image: none;
+    border-color: var(--sd-line);
+    box-shadow: var(--sd-bevel);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .sd-card-hover:hover {
+    background-color: var(--sd-hover);
+    border-color: color-mix(in srgb, var(--sd-accent) 34%, var(--sd-line));
+    box-shadow:
+      var(--sd-bevel),
+      0 10px 26px rgb(0 0 0 / 0.22),
+      var(--sd-glow-subtle);
+  }
+  .sd-topbar-blur,
+  .sd-pill-blur {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .sd-topbar-blur {
+    background: var(--sd-app);
+  }
+  .sd-pill-blur {
+    background: var(--sd-box);
+    border-color: var(--sd-line);
+  }
+  /* Drop the ambient wash so nothing shows through opaque surfaces. */
+  body::before {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   High-contrast — opaque surfaces plus a stronger, brighter border so the
+   card edges stay legible without relying on the glass sheen.
+   ------------------------------------------------------------------------- */
+@media (prefers-contrast: more) {
+  .sd-panel {
+    background-color: var(--sd-box);
+    background-image: none;
+    border-color: color-mix(in srgb, white 22%, var(--sd-line));
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  body::before {
+    display: none;
   }
 }
 
