@@ -107,8 +107,8 @@ test("the loop stays fully visible with margin under object-contain at every car
   const cards: Array<[number, number]> = [
     [700, 438], // 1.60:1 (narrow end)
     [700, 350], // 2.00:1
-    [700, 304], // 2.30:1 (typical course cell)
-    [700, 269], // 2.60:1
+    [700, 304], // 2.30:1
+    [700, 269], // 2.60:1 (measured course cell at 1440x900)
     [700, 233], // 3.00:1 (wide end)
   ];
   for (const [cardW, cardH] of cards) {

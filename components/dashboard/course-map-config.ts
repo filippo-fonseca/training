@@ -108,7 +108,7 @@ const STATIC_STYLE_PARAMS = [
  *
  * Shape (KEY redacted):
  *   https://maps.googleapis.com/maps/api/staticmap
- *     ?center=42.6xxxxx,-71.3xxxxx&zoom=13&size=640x360&scale=2
+ *     ?center=42.6xxxxx,-71.3xxxxx&zoom=13&size=560x224&scale=2
  *     &path=color:0x34c3e0ff|weight:4|enc:<ENCODED_LOOP>
  *     &style=element:geometry|color:0x0e1116  (x9)
  *     &key=KEY
