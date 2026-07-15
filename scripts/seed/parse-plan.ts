@@ -258,9 +258,38 @@ function parseDay(headerLine: string, regionLines: string[]): ParsedDay {
     phaseLabel,
     plannedRunKm,
     cumulativeKm,
-    sessions,
+    sessions: applyRulingD11(sessions),
     alternatives,
   };
+}
+
+// -----------------------------------------------------------------------------
+// Sealed ruling D11: this app tracks RUNS. Lifting is not a session, so all
+// upper-body work is removed from the plan; leg days and recovery work stay.
+// The plan source document (data/baystate-2026/plan-full.md) is left untouched
+// as history — the ruling is applied here at generation time so a fresh
+// seed/deploy matches the live database exactly. Concretely:
+//   * Drop every secondary session whose title starts with "Upper"
+//     (Upper A/B/C plus the two "reduced" variants); a lifting-only day
+//     becomes a plain no-run day with no secondary.
+//   * Rewrite the strength/upper primaries that are really no-run or bike days:
+//       "No run - strength", "No run - upper"             -> "No run"   (rest)
+//       "No run - upper + easy bike", "Easy bike + upper" -> "Easy bike" (bike)
+//     Prescriptions are kept verbatim (they already describe walking/bike only).
+// -----------------------------------------------------------------------------
+function applyRulingD11(sessions: ParsedSession[]): ParsedSession[] {
+  return sessions
+    .filter((s) => !(s.slot === 'secondary' && /^Upper\b/.test(s.title)))
+    .map((s): ParsedSession => {
+      if (s.slot !== 'primary') return s;
+      if (s.title === 'No run - strength' || s.title === 'No run - upper') {
+        return { ...s, title: 'No run', category: 'rest' };
+      }
+      if (s.title === 'No run - upper + easy bike' || s.title === 'Easy bike + upper') {
+        return { ...s, title: 'Easy bike', category: 'bike' };
+      }
+      return s;
+    });
 }
 
 function parseWeekDates(header: string): { start: string; end: string } {
