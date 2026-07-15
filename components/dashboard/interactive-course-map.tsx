@@ -28,16 +28,29 @@ declare global {
 const SCRIPT_ID = "google-maps-js-api";
 let loaderPromise: Promise<any> | null = null;
 
-/** Inject the Maps JS API once; resolve with google.maps. */
+/**
+ * Inject the Maps JS API once and resolve with google.maps ONLY after the
+ * libraries we use have been imported. Under the async loader
+ * (`loading=async`), the constructors (Map, Polyline, Marker, …) are not
+ * available on the `google.maps` namespace at script `onload`; they must be
+ * pulled in via `google.maps.importLibrary(...)` first. We await the `maps`
+ * library (Map, Polyline, LatLngBounds, SymbolPath) and the `marker` library
+ * (Marker) so callers can construct everything synchronously once this
+ * resolves. The awaits populate the `google.maps` namespace, so we resolve
+ * with `window.google.maps`.
+ */
 function loadGoogleMaps(key: string): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  if (window.google?.maps) return Promise.resolve(window.google.maps);
   if (loaderPromise) return loaderPromise;
 
-  loaderPromise = new Promise((resolve, reject) => {
+  loaderPromise = new Promise<void>((resolve, reject) => {
+    if (window.google?.maps?.importLibrary) {
+      resolve();
+      return;
+    }
     const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener("load", () => resolve(window.google?.maps));
+      existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => {
         loaderPromise = null;
         reject(new Error("maps script error"));
@@ -50,13 +63,25 @@ function loadGoogleMaps(key: string): Promise<any> {
     s.src =
       "https://maps.googleapis.com/maps/api/js?loading=async&v=weekly&key=" +
       encodeURIComponent(key);
-    s.onload = () => resolve(window.google?.maps);
+    s.onload = () => resolve();
     s.onerror = () => {
       loaderPromise = null;
       reject(new Error("maps script error"));
     };
     document.head.appendChild(s);
-  });
+  })
+    .then(async () => {
+      const importLibrary = window.google?.maps?.importLibrary;
+      if (!importLibrary) throw new Error("maps importLibrary unavailable");
+      // Import the libraries whose classes we construct below, then hand back
+      // the now-populated google.maps namespace.
+      await Promise.all([importLibrary("maps"), importLibrary("marker")]);
+      return window.google.maps;
+    })
+    .catch((err) => {
+      loaderPromise = null;
+      throw err;
+    });
   return loaderPromise;
 }
 
@@ -130,7 +155,11 @@ export function InteractiveCourseMap({ className }: { className?: string }) {
           marker(lm.aiken, "Aiken Street Bridge", "#8fd8ea", 5),
         );
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(
+          "[course-map] interactive map failed, falling back to SVG:",
+          err,
+        );
         if (!cancelled) setFailed(true);
       });
 
