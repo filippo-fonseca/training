@@ -7,7 +7,7 @@ import { categoryMeta } from "@/components/calendar/status";
 import { formatShortDate } from "@/components/journey/journey-time";
 import type { TodayData, OverlayKey } from "../data";
 import type { OriginRect } from "../overlay-dialog";
-import { WidgetCard, WidgetLabel } from "../widget-card";
+import { WidgetCard } from "../widget-card";
 import { VerifiedBadge } from "../verified-badge";
 
 interface Props {
@@ -155,6 +155,14 @@ export function TodayWidget({
         rpeText: compact?.rpeText ?? null,
       };
 
+  // The mono small-caps label: "TODAY · <weekday> · <date>" on today, or
+  // "<WEEKDAY> · <MMM D> · DAY n/98" when browsing (sd-stat-label uppercases it).
+  const headerLabel = isToday
+    ? `Today${view.weekday ? ` · ${view.weekday}` : ""}${view.dateShort ? ` · ${view.dateShort}` : ""}`
+    : `${view.weekday ?? ""}${view.dateShort ? ` · ${view.dateShort}` : ""}${
+        view.dayIndex != null ? ` · Day ${view.dayIndex}/${totalDays}` : ""
+      }`;
+
   const cat = categoryMeta((view.category as SessionCategory | null) ?? null);
   const badgeLabel = view.verified
     ? "Verified"
@@ -172,20 +180,12 @@ export function TodayWidget({
         bodyClassName="p-4 sm:p-5"
       >
         {/* Header: the day label. The controls float over the top-right (they are
-            separate buttons, so leave room here and never nest them in this one). */}
-        <div className="flex items-start justify-between gap-2 pr-16">
-          {isToday ? (
-            <WidgetLabel>
-              Today{view.weekday ? ` · ${view.weekday}` : ""}
-              {view.dateShort ? ` · ${view.dateShort}` : ""}
-            </WidgetLabel>
-          ) : (
-            <WidgetLabel>
-              {view.weekday ?? ""}
-              {view.dateShort ? ` · ${view.dateShort}` : ""}
-              {view.dayIndex != null ? ` · Day ${view.dayIndex}/${totalDays}` : ""}
-            </WidgetLabel>
-          )}
+            separate buttons, so reserve room here and never nest them in this one).
+            The label truncates so it can never slide under the controls. */}
+        <div className="flex min-w-0 items-start pr-24">
+          <span className="sd-stat-label block min-w-0 truncate" title={headerLabel}>
+            {headerLabel}
+          </span>
         </div>
 
         {/* Content region: re-keyed by date so it replays the entrance grammar
