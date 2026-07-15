@@ -4,7 +4,8 @@ import type { OverlayKey } from "../data";
 import type { OriginRect } from "../overlay-dialog";
 import { WidgetCard, WidgetLabel } from "../widget-card";
 import { CourseSvg } from "../course-svg";
-import { buildStaticMapUrl } from "../course-map-config";
+import { StaticCourseMap } from "../static-course-map";
+import { buildStaticMapUrl, projectedRoutePoints } from "../course-map-config";
 
 interface Props {
   onOpen: (key: OverlayKey, origin: OriginRect) => void;
@@ -28,14 +29,12 @@ export function CourseMapWidget({ onOpen }: Props) {
     >
       <WidgetLabel>Target course</WidgetLabel>
       <div className="flex min-h-0 flex-1 items-center justify-center py-1">
-        {staticMapUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+        {staticMapUrl && projectedRoutePoints ? (
+          <StaticCourseMap
             src={staticMapUrl}
-            alt="Dark street map of the Baystate Half Marathon course in Lowell, Massachusetts, the loop traced in cyan along the Merrimack River."
-            className="h-full max-h-full w-full rounded-sd-tile object-cover"
-            loading="lazy"
-            decoding="async"
+            points={projectedRoutePoints}
+            alt="Dark street map of the Baystate Half Marathon course in Lowell, Massachusetts, the loop traced in cyan along the Merrimack River, with the runner's avatar tracing the loop."
+            className="h-full max-h-full w-full"
           />
         ) : (
           <CourseSvg className="h-full max-h-full w-full" />
