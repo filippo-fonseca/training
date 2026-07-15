@@ -51,6 +51,8 @@ export function DashboardShell({ data, overlays }: Props) {
   // on today it keeps the rich server-rendered detail; on any other day it shows
   // the compact summary + a full-detail link.
   const [selectedDate, setSelectedDate] = useState(data.todayISO);
+  // The week-volume switcher's selection: which of weeks 1..14 the gauge shows.
+  const [selectedWeek, setSelectedWeek] = useState(data.currentWeekIndex);
 
   // Open on load when a deep-link hash is present, and keep in sync with the
   // hash on manual edits / history navigation.
@@ -170,7 +172,16 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "week",
         cls: "lg:[grid-area:5/7/7/10] max-lg:min-h-[11rem]",
-        node: <WeekVolumeWidget data={data.week} onOpen={open} />,
+        node: (
+          <WeekVolumeWidget
+            weeks={data.weeks}
+            currentWeekIndex={data.currentWeekIndex}
+            totalWeeks={data.countdown.totalWeeks}
+            selectedWeekIndex={selectedWeek}
+            onSelectWeek={setSelectedWeek}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "heatmap",
@@ -178,7 +189,7 @@ export function DashboardShell({ data, overlays }: Props) {
         node: <HeatmapMiniWidget data={data.heatmap} onOpen={open} />,
       },
     ],
-    [data, open, selectedDate],
+    [data, open, selectedDate, selectedWeek],
   );
 
   // The Today overlay follows the day browser: today keeps its rich server node;
