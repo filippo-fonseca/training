@@ -27,15 +27,19 @@ import {
 import { nyCalendarDate } from "@/lib/strava/match";
 import { loadStats, type StatsPageData } from "@/app/(public)/stats/_data";
 import { loadProgress, type ProgressData } from "@/app/(public)/progress/_data";
+import {
+  loadMilestones,
+  type MilestonesData,
+  type TimelineEntry,
+} from "@/app/(public)/milestones/_data";
 import { getAnonClient } from "@/components/calendar/data";
 import {
-  getLatestVerifiedActivity,
   getActivityLinksForPlan,
   getStravaActivities,
   type CompactDay,
 } from "@/lib/db";
 import {
-  toActivityEvidence,
+  selectVerifiedActivities,
   type ActivityEvidence,
 } from "@/lib/derive";
 
@@ -93,6 +97,32 @@ export interface WeekData {
   hasLogs: boolean;
 }
 
+/** One browseable week for the week-volume switcher: the same gauge facts as
+ *  WeekData plus its 1-based index, so the widget can walk weeks 1..14. */
+export interface WeekEntry {
+  weekIndex: number;
+  loggedKm: number;
+  plannedKm: number;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  phaseLabel: string;
+  hasLogs: boolean;
+}
+
+/** A compact, public-safe milestone/checkpoint for the next-milestone switcher.
+ *  Curated fields only, projected from the /milestones timeline (13 entries):
+ *  the entry's stable key, its title, its ordering date + human label, whether
+ *  it is a milestone or a checkpoint, and a km target parsed from the title when
+ *  the entry names one (e.g. a "21.1 km" gated long run), else null. */
+export interface CompactMilestone {
+  id: string;
+  title: string;
+  date: string | null;
+  dateLabel: string;
+  kind: "milestone" | "checkpoint";
+  targetKm: number | null;
+}
+
 /** The serializable stat tiles + next-milestone props. */
 export interface StatTilesData {
   completedKm: number;
@@ -137,9 +167,19 @@ export interface DashboardData {
   countdown: CountdownData;
   today: TodayData;
   spotlight: ActivityEvidence | null;
+  /** Every verified (linked) run, newest first, for the spotlight run switcher. */
+  spotlightVerified: ActivityEvidence[];
   week: WeekData;
+  /** Every plan week (1..14) as a browseable gauge record for the week switcher. */
+  weeks: WeekEntry[];
+  /** 1-based index of the current week: the switcher's default + reset target. */
+  currentWeekIndex: number;
   stats: StatTilesData;
   nextMilestone: NextMilestoneData | null;
+  /** The full milestone/checkpoint timeline (13 entries) for the chip switcher. */
+  milestones: CompactMilestone[];
+  /** Index of the next upcoming entry: the chip's default + reset target. */
+  nextMilestoneIndex: number;
   heatmap: HeatmapMiniData;
 }
 
@@ -159,43 +199,96 @@ const EST = "EST. 2026 · LOWELL, MA";
 const WORDMARK = "THE COMEBACK";
 
 /**
- * Look up the spotlight activity plus a short list of other recent verified
- * (linked) runs. Returns empty data when the environment is unconfigured so the
- * spotlight widget renders its generated route-pattern fallback.
+ * Look up every verified (linked) run for the plan, newest first, plus the
+ * latest as the spotlight default. Returns empty data when the environment is
+ * unconfigured so the spotlight widget renders its generated route-pattern
+ * fallback. The full list feeds the spotlight run switcher; the caller slices a
+ * short tail for the "other recent runs" section of the overlay.
  */
 async function loadSpotlight(
   planId: string,
-): Promise<{ spotlight: ActivityEvidence | null; recent: ActivityEvidence[] }> {
+): Promise<{ spotlight: ActivityEvidence | null; verified: ActivityEvidence[] }> {
   const client = getAnonClient();
-  if (!client) return { spotlight: null, recent: [] };
+  if (!client) return { spotlight: null, verified: [] };
   try {
-    const [latestRow, linkBundle, activities] = await Promise.all([
-      getLatestVerifiedActivity(client, planId),
+    const [linkBundle, activities] = await Promise.all([
       getActivityLinksForPlan(client, planId),
       getStravaActivities(client, planId),
     ]);
-    const spotlight = latestRow ? toActivityEvidence(latestRow) : null;
-    // "Verified" == linked. Build the set of linked activity row ids, then
-    // project those rows (already ordered start_date DESC) to curated evidence.
-    const linkedIds = new Set(linkBundle.links.map((l) => l.strava_activity_id));
-    const recent = activities
-      .filter((a) => linkedIds.has(a.id))
-      .map(toActivityEvidence)
-      .slice(0, 6);
-    return { spotlight, recent };
+    // "Verified" == linked. The readers order by start_date DESC, so the first
+    // entry is the latest verified run (the spotlight default).
+    const verified = selectVerifiedActivities(activities, linkBundle.links);
+    return { spotlight: verified[0] ?? null, verified };
   } catch {
-    return { spotlight: null, recent: [] };
+    return { spotlight: null, verified: [] };
   }
+}
+
+/** Parse a km target out of a milestone title when it names one (e.g. "21.1 km
+ *  easy confidence run" -> 21.1), else null. There is no structured km column on
+ *  a milestone, so the title is the only public-safe source. */
+export function parseTargetKm(title: string): number | null {
+  const m = /(\d+(?:\.\d+)?)\s*km\b/i.exec(title);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Project the /milestones timeline (13 entries) to the compact, public-safe
+ *  switcher records, preserving the timeline's chronological order. */
+export function toCompactMilestones(entries: TimelineEntry[]): CompactMilestone[] {
+  return entries.map((e) => ({
+    id: e.key,
+    title: e.title,
+    date: e.date,
+    dateLabel: e.dateLabel,
+    kind: e.kind,
+    targetKm: parseTargetKm(e.title),
+  }));
+}
+
+/** The default/reset selection for the milestone chip: the first entry that has
+ *  not already passed (its next upcoming or current entry), or the last entry
+ *  when the whole timeline is behind us. */
+export function nextMilestoneIndex(entries: TimelineEntry[]): number {
+  const i = entries.findIndex((e) => e.status !== "passed");
+  if (i >= 0) return i;
+  return entries.length > 0 ? entries.length - 1 : 0;
+}
+
+/** Project the weekly progress series to the browseable week-volume records. */
+export function toWeekEntries(weekly: ProgressData["weekly"]): WeekEntry[] {
+  return weekly.map((w) => ({
+    weekIndex: w.weekIndex,
+    loggedKm: w.actualKm ?? 0,
+    plannedKm: w.plannedKm,
+    rangeMin: w.rangeMinKm ?? null,
+    rangeMax: w.rangeMaxKm ?? null,
+    phaseLabel: w.phaseLabel ?? "",
+    hasLogs: w.actualKm != null,
+  }));
 }
 
 /** Assemble the whole dashboard in one server pass. */
 export async function assembleDashboard(): Promise<DashboardBundle> {
-  const [view, stats, progress] = await Promise.all([
+  const [view, stats, progress, milestones] = await Promise.all([
     loadJourney(),
     loadStats(),
     loadProgress(),
+    loadMilestones(),
   ]);
-  const { spotlight, recent } = await loadSpotlight(view.plan.id);
+  const { spotlight, verified } = await loadSpotlight(view.plan.id);
+
+  // Browseable projections for the three switchers (reuse loaded data; no
+  // extra client fetches). Weeks come from the progress series; the milestone
+  // timeline from the /milestones loader; verified runs from the spotlight lookup.
+  const weeks = toWeekEntries(progress.weekly);
+  const currentWeekIndex = Math.min(
+    Math.max(1, view.weekIndex),
+    weeks.length > 0 ? weeks.length : 1,
+  );
+  const compactMilestones = toCompactMilestones(milestones.entries);
+  const nextMsIndex = nextMilestoneIndex(milestones.entries);
 
   // Day counter: "day N of 98", clamped to the plan span.
   let dayNumber = 1;
@@ -252,6 +345,7 @@ export async function assembleDashboard(): Promise<DashboardBundle> {
       offPlanRun: hasEvidence && !onPlan,
     },
     spotlight,
+    spotlightVerified: verified,
     week: {
       loggedKm: view.week.loggedKm,
       plannedKm: view.week.plannedKm,
@@ -260,6 +354,8 @@ export async function assembleDashboard(): Promise<DashboardBundle> {
       phaseLabel: view.phaseLabel,
       hasLogs: view.week.hasLogs,
     },
+    weeks,
+    currentWeekIndex,
     stats: {
       completedKm: stats.summary.totalCompletedKm,
       totalPlannedKm: stats.summary.totalPlannedKm,
@@ -279,6 +375,8 @@ export async function assembleDashboard(): Promise<DashboardBundle> {
           daysAway: view.nextMilestone.daysAway,
         }
       : null,
+    milestones: compactMilestones,
+    nextMilestoneIndex: nextMsIndex,
     heatmap: {
       cells: stats.heatmap,
       today: stats.today,
@@ -287,7 +385,14 @@ export async function assembleDashboard(): Promise<DashboardBundle> {
     },
   };
 
-  return { data, view, stats, progress, spotlight, recentVerified: recent };
+  return {
+    data,
+    view,
+    stats,
+    progress,
+    spotlight,
+    recentVerified: verified.slice(0, 6),
+  };
 }
 
 /** Format a pace label (min/km) from curated distance + moving time. */
