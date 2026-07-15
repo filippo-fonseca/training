@@ -8,6 +8,7 @@ import {
   evidenceById,
   groupEvidenceByDay,
   isRunSessionCategory,
+  selectVerifiedActivities,
   stravaActivityUrl,
   toActivityEvidence,
   type ActivityEvidence,
@@ -262,4 +263,40 @@ test('off-plan run never completes a strength day: onPlan gates done, volume sti
   assert.equal(done, false); // strength session NOT marked done by the off-plan run
   // Volume is still available from the day's evidence.
   assert.equal(cumulativeEvidence(de!.activities).distanceKm, 9);
+});
+
+// -----------------------------------------------------------------------------
+// selectVerifiedActivities: the spotlight run switcher's source list. Only linked
+// (verified) activities survive, input order (start_date DESC) is preserved so
+// the list is latest-first, and titles pass through englishTitle at the seam.
+// -----------------------------------------------------------------------------
+
+test('selectVerifiedActivities: keeps only linked rows, newest-first, in input order', () => {
+  const activities = [
+    activityRow({ id: 'row-new', strava_id: 3, start_date: '2026-08-01T12:00:00Z' }),
+    activityRow({ id: 'row-mid', strava_id: 2, start_date: '2026-07-20T12:00:00Z' }),
+    activityRow({ id: 'row-old', strava_id: 1, start_date: '2026-07-10T12:00:00Z' }),
+  ];
+  const links = [
+    link({ id: 'l1', strava_activity_id: 'row-new' }),
+    link({ id: 'l2', strava_activity_id: 'row-old' }),
+  ];
+  const out = selectVerifiedActivities(activities, links);
+  // Only the two linked rows, and the unlinked middle row is dropped.
+  assert.deepEqual(out.map((a) => a.stravaId), [3, 1]);
+});
+
+test('selectVerifiedActivities: empty links => empty list (no verified runs)', () => {
+  const activities = [activityRow({ id: 'row-1', strava_id: 1 })];
+  assert.deepEqual(selectVerifiedActivities(activities, []), []);
+});
+
+test('selectVerifiedActivities: title is translated to English at the projection seam', () => {
+  const activities = [
+    activityRow({ id: 'row-1', strava_id: 1, name: 'Corrida ao entardecer' }),
+  ];
+  const links = [link({ id: 'l1', strava_activity_id: 'row-1' })];
+  const out = selectVerifiedActivities(activities, links);
+  assert.equal(out.length, 1);
+  assert.equal(out[0].name, 'Evening Run'); // englishTitle honoured
 });
