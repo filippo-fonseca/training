@@ -156,33 +156,9 @@ for (let w = 0; w < WEEK_STARTS.length; w++) {
       updated_at: '2026-07-12T00:00:00Z',
     });
 
-    // Secondary session: the daily strength block that runs alongside the plan.
-    sessions.push({
-      id: `${dayId}-s`,
-      plan_day_id: dayId,
-      slot: 'secondary',
-      title: 'Strength',
-      category: 'strength_only',
-      is_quality: false,
-      role: null,
-      prescription_text: null,
-      distance_km: null,
-      duration_text: null,
-      duration_min_minutes: 30,
-      duration_max_minutes: null,
-      pace_text: null,
-      pace_min_s_per_km: null,
-      pace_max_s_per_km: null,
-      rpe_text: null,
-      hr_text: null,
-      terrain: null,
-      cue: null,
-      fuel: null,
-      shoes: null,
-      completion_planned: null,
-      created_at: '2026-07-12T00:00:00Z',
-      updated_at: '2026-07-12T00:00:00Z',
-    });
+    // Ruling D11: this app tracks runs. Lifting does not count as a session, so
+    // the old daily strength secondary is no longer emitted; the stats fixture
+    // now carries run/rest primaries only, matching the seed.
 
     globalDayIndex += 1;
   }
