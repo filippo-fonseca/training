@@ -16,9 +16,15 @@
 export const TILE_SIZE = 256;
 
 /** Nominal Static Maps request size (the &size= base; &scale=2 only doubles DPI,
- * not the covered area, so projection math uses these base dimensions). */
+ * not the covered area, so projection math uses these base dimensions).
+ *
+ * The course cell is a wide bento tile (lg grid rows 5-6 x cols 1-6, roughly
+ * 2.3:1 to 2.6:1). Requesting a wide image (640x300, 2.13:1) means an
+ * object-contain render into that cell needs only a thin, map-colored letterbox
+ * to fill the remaining edges, so the map reads full-bleed while the whole loop
+ * stays uncropped with margin. See chooseStaticView for the margin guarantee. */
 export const STATIC_MAP_WIDTH = 640;
-export const STATIC_MAP_HEIGHT = 360;
+export const STATIC_MAP_HEIGHT = 300;
 
 /** Comfortable margin: the loop must leave at least this fraction of the image
  * clear on the tighter axis, else we step one zoom level further out. */
