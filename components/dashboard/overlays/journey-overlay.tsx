@@ -75,6 +75,7 @@ export function JourneyOverlay({
               THE MISSION
             </h2>
             <span className="sd-stat-label mt-1">By Filippo Fonseca</span>
+            <span className="sd-stat-label mt-0.5">President @ Yale Robotics</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <a
