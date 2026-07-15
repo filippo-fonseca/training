@@ -58,7 +58,7 @@ export function CourseMapWidget({ onOpen }: Props) {
           <span className="rounded-md bg-[var(--sd-darker-box)]/85 px-2.5 py-1 font-mono text-[11px] leading-none tracking-wide text-sd-ink-dull shadow-sm ring-1 ring-[var(--sd-line)]/60 backdrop-blur-sm">
             Baystate Half · Lowell, MA · 2 laps
           </span>
-          <span className="rounded bg-[var(--sd-darker-box)]/70 px-1.5 py-0.5 font-mono text-[9px] leading-none tracking-wide text-sd-ink-faint backdrop-blur-sm">
+          <span className="rounded bg-[var(--sd-darker-box)]/85 px-1.5 py-0.5 font-mono text-[9px] leading-none tracking-wide text-sd-ink-faint backdrop-blur-sm">
             Trace (c) OpenStreetMap contributors
           </span>
         </div>
