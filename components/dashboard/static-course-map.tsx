@@ -6,9 +6,12 @@
  *
  * Because the static image is requested at an EXPLICIT center + zoom
  * (course-map-config), every route point has a known pixel in the nominal
- * 640x360 image (projectedRoutePoints). We draw the image with object-contain so
- * the whole loop stays visible, compute the letterbox rect of the displayed
- * image, and map the projected points into it. The avatar is a single absolutely
+ * static image (projectedRoutePoints). The image is the full-bleed background of
+ * the course card: it fills the card with object-contain (never cropping the
+ * loop) over a map-colored letterbox (MAP_BG, Google's dark map base) so the thin
+ * fill on the card's longer axis is invisible. We compute the letterbox rect of
+ * the displayed image and map the projected points into it. The avatar is a single
+ * absolutely
  * positioned <img> moved by transform only (no layout thrash), driven by the
  * shared rAF runner (constant speed by distance, ~40s lap, paused when hidden,
  * parked at START / FINISH under prefers-reduced-motion).
@@ -25,6 +28,11 @@ import {
 import { LAP_MS, useRouteRunner, type Vec2 } from "@/lib/course/use-route-runner";
 
 const AVATAR_PX = 22; // rendered avatar diameter
+
+/** Google's dark map base color (from the static/JS map style, element:geometry).
+ * Used as the object-contain letterbox so any fill on the card's longer axis is
+ * indistinguishable from the map itself. */
+export const MAP_BG = "#0e1116";
 
 interface Props {
   src: string;
@@ -77,12 +85,16 @@ export function StaticCourseMap({ src, points, alt, className }: Props) {
   useRouteRunner(vecs, LAP_MS, apply);
 
   return (
-    <div ref={boxRef} className={`relative ${className ?? ""}`}>
+    <div
+      ref={boxRef}
+      className={`relative ${className ?? ""}`}
+      style={{ backgroundColor: MAP_BG }}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}
-        className="h-full w-full rounded-sd-tile object-contain"
+        className="h-full w-full object-contain"
         loading="lazy"
         decoding="async"
       />
