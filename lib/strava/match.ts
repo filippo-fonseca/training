@@ -33,6 +33,16 @@ export function stravaSportFamily(sportType: string | null | undefined): SportFa
   return 'other';
 }
 
+/**
+ * True when a Strava sport_type (or legacy type) is a run-family activity
+ * (Run, TrailRun, VirtualRun, ...). Pure and unit-testable: the single source
+ * of the "runs only" rule (D11) shared by sync, the /admin/log evidence picker,
+ * and the /admin/strava lists.
+ */
+export function isRunSport(sportType: string | null | undefined): boolean {
+  return stravaSportFamily(sportType) === 'run';
+}
+
 /** Run-type plan session categories (see SessionCategory in the DB types). */
 const RUN_CATEGORIES = new Set(['easy_run', 'long_run', 'quality_run', 'race']);
 const BIKE_CATEGORIES = new Set(['bike']);

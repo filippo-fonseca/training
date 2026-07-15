@@ -19,6 +19,7 @@ import {
 } from './db';
 import {
   dayFamilies,
+  isRunSport,
   matchActivities,
   stravaSportFamily,
   type MatchableActivity,
@@ -142,7 +143,11 @@ export async function runStravaSync(client: TypedSupabaseClient): Promise<SyncRe
     : Date.now() - FIRST_SYNC_WINDOW_MS;
   const after = Math.floor(afterMs / 1000);
 
-  const activities = await listActivities(accessToken, { after });
+  const pulled = await listActivities(accessToken, { after });
+  // Runs only (D11): keep run-family activities (Run/TrailRun/VirtualRun) and
+  // skip everything else BEFORE the upsert and the photo loop, so non-runs never
+  // land in the store.
+  const activities = pulled.filter((a) => isRunSport(a.sport_type ?? a.type ?? null));
   const rows = activities.map(toInsert);
   await upsertActivities(client, rows);
 
@@ -189,7 +194,7 @@ export async function runStravaSync(client: TypedSupabaseClient): Promise<SyncRe
 
   return {
     status: 'ok',
-    fetched: activities.length,
+    fetched: pulled.length,
     upserted: rows.length,
     matched: matchedCount,
   };
