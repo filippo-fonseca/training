@@ -15,6 +15,7 @@ import {
   DEFAULT_PLAN_SLUG,
 } from '@/lib/db';
 import { todayInNewYork } from '@/components/calendar/date-utils';
+import { isRunSport } from '@/lib/strava/match';
 import type {
   Plan,
   PlanWeek,
@@ -280,7 +281,11 @@ export async function getStravaPickerData(sessionIds: string[]): Promise<StravaP
       getActivityLinksForSessions(supabase, sessionIds),
     ]);
     const linkedBySession = new Map<string, Set<string>>();
+    // Every activity that already has a link (session- OR day-level): these must
+    // survive the runs-only filter so an existing link is never hidden.
+    const linkedActivityIds = new Set<string>();
     for (const l of links) {
+      linkedActivityIds.add(l.strava_activity_id);
       // Day-level (off-plan) links have a null day_session_id; the session picker
       // only tracks session-level links.
       if (!l.day_session_id) continue;
@@ -288,7 +293,12 @@ export async function getStravaPickerData(sessionIds: string[]): Promise<StravaP
       set.add(l.strava_activity_id);
       linkedBySession.set(l.day_session_id, set);
     }
-    return { activities, linkedBySession };
+    // Runs only (D11): show run-family activities in the picker, but keep any
+    // already-linked non-run so existing links remain visible and editable.
+    const runsOnly = activities.filter(
+      (a) => isRunSport(a.sport_type) || linkedActivityIds.has(a.id),
+    );
+    return { activities: runsOnly, linkedBySession };
   } catch {
     return { activities: [], linkedBySession: new Map() };
   }
