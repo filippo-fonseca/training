@@ -20,6 +20,7 @@ import { SpotlightWidget } from "./widgets/spotlight-widget";
 import { CourseMapWidget } from "./widgets/course-map-widget";
 import { WeekVolumeWidget } from "./widgets/week-volume-widget";
 import { HeatmapMiniWidget } from "./widgets/heatmap-mini-widget";
+import { MissionWidget } from "./widgets/mission-widget";
 import { StatTile } from "./widgets/stat-tile";
 import { NextMilestoneChip } from "./widgets/next-milestone-chip";
 import { DayBrowseOverlay } from "./overlays/day-browse-overlay";
@@ -123,7 +124,7 @@ export function DashboardShell({ data, overlays }: Props) {
       },
       {
         key: "spotlight",
-        cls: "lg:[grid-area:1/7/5/13] max-lg:min-h-[15rem]",
+        cls: "lg:[grid-area:1/7/4/13] max-lg:min-h-[15rem]",
         node: (
           <SpotlightWidget
             verified={data.spotlightVerified}
@@ -132,6 +133,11 @@ export function DashboardShell({ data, overlays }: Props) {
             onOpen={open}
           />
         ),
+      },
+      {
+        key: "mission",
+        cls: "lg:[grid-area:4/7/5/13] max-lg:min-h-[6rem]",
+        node: <MissionWidget onOpen={open} />,
       },
       {
         key: "stat-1",
