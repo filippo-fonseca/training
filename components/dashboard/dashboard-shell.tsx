@@ -22,6 +22,7 @@ import { WeekVolumeWidget } from "./widgets/week-volume-widget";
 import { HeatmapMiniWidget } from "./widgets/heatmap-mini-widget";
 import { StatTile } from "./widgets/stat-tile";
 import { NextMilestoneChip } from "./widgets/next-milestone-chip";
+import { DayBrowseOverlay } from "./overlays/day-browse-overlay";
 
 const OVERLAY_KEYS: OverlayKey[] = [
   "journey",
@@ -46,6 +47,10 @@ interface Props {
 export function DashboardShell({ data, overlays }: Props) {
   const [active, setActive] = useState<OverlayKey | null>(null);
   const [origin, setOrigin] = useState<OriginRect | null>(null);
+  // The day browser's selection lives here so the Today overlay can follow it:
+  // on today it keeps the rich server-rendered detail; on any other day it shows
+  // the compact summary + a full-detail link.
+  const [selectedDate, setSelectedDate] = useState(data.todayISO);
 
   // Open on load when a deep-link hash is present, and keep in sync with the
   // hash on manual edits / history navigation.
@@ -96,7 +101,17 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "today",
         cls: "lg:[grid-area:1/4/4/7] max-lg:min-h-[9rem]",
-        node: <TodayWidget data={data.today} onOpen={open} />,
+        node: (
+          <TodayWidget
+            data={data.today}
+            days={data.days}
+            todayISO={data.todayISO}
+            totalDays={data.totalDays}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "spotlight",
@@ -163,8 +178,15 @@ export function DashboardShell({ data, overlays }: Props) {
         node: <HeatmapMiniWidget data={data.heatmap} onOpen={open} />,
       },
     ],
-    [data, open],
+    [data, open, selectedDate],
   );
+
+  // The Today overlay follows the day browser: today keeps its rich server node;
+  // any other day shows the compact summary + full-detail link (hash stays #w=today).
+  const browsedDay =
+    active === "today" && selectedDate !== data.todayISO
+      ? data.days.find((d) => d.date === selectedDate) ?? null
+      : null;
 
   return (
     <main className="flex min-h-dvh flex-col overflow-x-hidden lg:h-dvh lg:overflow-hidden">
@@ -184,7 +206,11 @@ export function DashboardShell({ data, overlays }: Props) {
         labelledById={labelledById}
         origin={origin}
       >
-        {active ? overlays[active] : null}
+        {browsedDay ? (
+          <DayBrowseOverlay day={browsedDay} totalDays={data.totalDays} />
+        ) : active ? (
+          overlays[active]
+        ) : null}
       </OverlayDialog>
     </main>
   );

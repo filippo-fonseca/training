@@ -27,6 +27,8 @@ export interface StatsPageData {
   plan: Plan;
   summary: StatsData['summary'];
   heatmap: StatsData['heatmap'];
+  /** Every plan day as a compact browsing record (feeds the dashboard day browser). */
+  days: StatsData['days'];
   /** Today as an ISO date string ('YYYY-MM-DD'); pins the heatmap's today ring. */
   today: string;
   /** True when served from the static fixture rather than the live database. */
@@ -52,7 +54,7 @@ function noonUtc(iso: string): Date {
 }
 
 function fixtureData(): StatsPageData {
-  const { summary, heatmap } = computeStats(
+  const { summary, heatmap, days } = computeStats(
     FIXTURE_PLAN,
     FIXTURE_WEEKS,
     FIXTURE_DAYS,
@@ -60,7 +62,7 @@ function fixtureData(): StatsPageData {
     [],
     noonUtc(FIXTURE_TODAY),
   );
-  return { plan: FIXTURE_PLAN, summary, heatmap, today: FIXTURE_TODAY, fromFixture: true };
+  return { plan: FIXTURE_PLAN, summary, heatmap, days, today: FIXTURE_TODAY, fromFixture: true };
 }
 
 export async function loadStats(): Promise<StatsPageData> {
@@ -70,10 +72,10 @@ export async function loadStats(): Promise<StatsPageData> {
   try {
     const plan = await getPlan(client);
     const todayIso = todayInNewYork();
-    const { summary, heatmap } = await getStats(client, plan, noonUtc(todayIso));
+    const { summary, heatmap, days } = await getStats(client, plan, noonUtc(todayIso));
     // A plan always has days; an empty grid means the seed has not landed yet.
     if (heatmap.length === 0) return fixtureData();
-    return { plan, summary, heatmap, today: todayIso, fromFixture: false };
+    return { plan, summary, heatmap, days, today: todayIso, fromFixture: false };
   } catch {
     return fixtureData();
   }

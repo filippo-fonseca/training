@@ -172,3 +172,83 @@ test('without evidence, an unlinked planned run breaks the streak (control)', ()
   // Only the trailing rest day (Jul 14) is on track; Jul 13's unrun session breaks it.
   assert.equal(summary.currentStreak, 1);
 });
+
+// -----------------------------------------------------------------------------
+// Compact day-browser array. The dashboard's day browser reads the SAME folded
+// inputs (one pass) to project every plan day to a public-safe record. The three
+// evidence flags stay distinct so the widget honours D2 / D11: off-plan evidence
+// reads as verified (offPlanVerified) but never completes a planned session
+// (verified stays false); a manual completed log sets `logged` independently.
+// -----------------------------------------------------------------------------
+
+// Primary sessions carrying the curated prescription fields the browser shows.
+const BROWSE_SESSIONS: DaySession[] = [
+  {
+    id: 'sess-1',
+    plan_day_id: 'day-1',
+    slot: 'primary',
+    title: 'Threshold session',
+    category: 'quality_run',
+    distance_km: 10,
+    pace_text: '4:30/km',
+    rpe_text: '7/10',
+    duration_min_minutes: 55,
+  } as DaySession,
+  {
+    id: 'sess-2',
+    plan_day_id: 'day-2',
+    slot: 'primary',
+    title: 'No run',
+    category: 'rest',
+    distance_km: null,
+    duration_min_minutes: null,
+  } as DaySession,
+];
+
+test('compact days project curated prescription fields in 1-based date order', () => {
+  const { days } = computeStats(PLAN, WEEKS, DAYS, BROWSE_SESSIONS, [], TODAY);
+
+  assert.equal(days.length, 2);
+  const [d1, d2] = days;
+
+  assert.equal(d1.date, '2026-07-13');
+  assert.equal(d1.dayIndex, 1); // 1-based, by date order (matches the seed)
+  assert.equal(d1.title, 'Threshold session');
+  assert.equal(d1.category, 'quality_run');
+  assert.equal(d1.distanceKm, 10);
+  assert.equal(d1.paceText, '4:30/km');
+  assert.equal(d1.rpeText, '7/10');
+
+  assert.equal(d2.dayIndex, 2);
+  assert.equal(d2.title, 'No run');
+  assert.equal(d2.category, 'rest');
+  assert.equal(d2.distanceKm, null);
+});
+
+test('compact flags: on-plan verifies, off-plan is offPlanVerified only (D11)', () => {
+  const { days } = computeStats(PLAN, WEEKS, DAYS, BROWSE_SESSIONS, [], TODAY, evidenceMap());
+  const byDate = new Map(days.map((d) => [d.date, d]));
+
+  // day-1: an ON-PLAN (session-level) link completes the planned run.
+  const jul13 = byDate.get('2026-07-13')!;
+  assert.equal(jul13.verified, true);
+  assert.equal(jul13.offPlanVerified, false);
+  assert.equal(jul13.logged, false);
+
+  // day-2: an OFF-PLAN (day-level) run on a rest day: verified stays false, but it
+  // reads as off-plan verified and never completes the session (decision D2 / D11).
+  const jul14 = byDate.get('2026-07-14')!;
+  assert.equal(jul14.verified, false);
+  assert.equal(jul14.offPlanVerified, true);
+  assert.equal(jul14.logged, false);
+});
+
+test('compact flags: a completed manual log sets `logged` without a Strava link', () => {
+  const logs: SessionLog[] = [log({ plan_day_id: 'day-1', completed: true, actual_distance_km: 10 })];
+  const { days } = computeStats(PLAN, WEEKS, DAYS, BROWSE_SESSIONS, logs, TODAY);
+  const jul13 = days.find((d) => d.date === '2026-07-13')!;
+
+  assert.equal(jul13.logged, true); // manual completion
+  assert.equal(jul13.verified, false); // no on-plan Strava link
+  assert.equal(jul13.offPlanVerified, false); // no linked evidence at all
+});
