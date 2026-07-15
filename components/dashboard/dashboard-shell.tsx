@@ -53,6 +53,8 @@ export function DashboardShell({ data, overlays }: Props) {
   const [selectedDate, setSelectedDate] = useState(data.todayISO);
   // The week-volume switcher's selection: which of weeks 1..14 the gauge shows.
   const [selectedWeek, setSelectedWeek] = useState(data.currentWeekIndex);
+  // The next-milestone switcher's selection: an index into the 13-entry timeline.
+  const [selectedMilestone, setSelectedMilestone] = useState(data.nextMilestoneIndex);
 
   // Open on load when a deep-link hash is present, and keep in sync with the
   // hash on manual edits / history navigation.
@@ -162,7 +164,15 @@ export function DashboardShell({ data, overlays }: Props) {
       {
         key: "milestone",
         cls: "lg:[grid-area:4/4/5/7] max-lg:min-h-[5rem]",
-        node: <NextMilestoneChip data={data.nextMilestone} onOpen={open} />,
+        node: (
+          <NextMilestoneChip
+            milestones={data.milestones}
+            nextIndex={data.nextMilestoneIndex}
+            selectedIndex={selectedMilestone}
+            onSelect={setSelectedMilestone}
+            onOpen={open}
+          />
+        ),
       },
       {
         key: "course",
@@ -189,7 +199,7 @@ export function DashboardShell({ data, overlays }: Props) {
         node: <HeatmapMiniWidget data={data.heatmap} onOpen={open} />,
       },
     ],
-    [data, open, selectedDate, selectedWeek],
+    [data, open, selectedDate, selectedWeek, selectedMilestone],
   );
 
   // The Today overlay follows the day browser: today keeps its rich server node;
