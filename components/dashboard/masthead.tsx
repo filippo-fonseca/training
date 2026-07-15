@@ -38,41 +38,46 @@ export function Masthead({ data }: { data: DashboardData }) {
         </span>
       </div>
 
-      {/* Manifesto (hidden on narrow screens) */}
+      {/* Manifesto (hidden on narrow screens). ink-dull clears 7.46:1 on the
+          masthead's --sd-app field — comfortably past WCAG AA 4.5:1. */}
       <p className="hidden min-w-0 flex-1 truncate px-4 text-center text-xs text-sd-ink-dull md:block">
         {data.manifesto}
       </p>
 
-      {/* Byline badge + Est + day counter + menu */}
-      <div className="flex items-center gap-3">
-        {/* Author byline: avatar + name link, then a GitHub source link */}
+      {/* Byline pill + separate GitHub button, then est + day counter + menu.
+          Grouped with a gap-3/gap-4 rhythm so the clusters read as distinct. */}
+      <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+        {/* Byline group: the pill (avatar + name) and a standalone GitHub button */}
         <div className="flex items-center gap-2">
+          {/* Byline pill — race-chip idiom (border-sd-line + bg-sd-darker-box),
+              the whole pill is the personal-site link. */}
           <a
             href="https://filippofonseca.com"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Filippo Fonseca's website"
-            className="group flex items-center gap-1.5 text-sd-ink-faint hover:text-sd-ink"
+            className="sd-press group flex items-center gap-2 rounded-full border border-sd-line bg-sd-darker-box px-2.5 py-1 text-sd-ink-dull transition-colors hover:border-sd-selected hover:text-sd-ink"
           >
             <img
               src="/filippo-avatar.png"
               alt=""
-              width={22}
-              height={22}
-              className="size-[22px] shrink-0 rounded-full border border-sd-line object-cover transition-colors group-hover:border-sd-selected"
+              width={18}
+              height={18}
+              className="size-[18px] shrink-0 rounded-full object-cover"
             />
             <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] lg:inline">
               By Filippo Fonseca
             </span>
           </a>
+          {/* Separate GitHub button — circular icon button, clear gap from the pill */}
           <a
             href="https://github.com/filippo-fonseca/training"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Source on GitHub"
-            className="text-sd-ink-faint hover:text-sd-ink"
+            className="sd-press grid size-7 shrink-0 place-items-center rounded-full border border-sd-line bg-sd-darker-box text-sd-ink-dull transition-colors hover:border-sd-selected hover:text-sd-ink"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -81,15 +86,15 @@ export function Masthead({ data }: { data: DashboardData }) {
             </svg>
           </a>
         </div>
-        <span aria-hidden className="font-mono text-[10px] text-sd-ink-faint">
-          &middot;
-        </span>
-        <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-sd-ink-faint sm:inline">
-          {data.est}
-        </span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-sd-accent-faint">
-          Day {data.dayNumber} of {data.totalDays}
-        </span>
+        {/* Est + day counter — ink-dull (7.46:1) and accent-faint (8.82:1), both AA */}
+        <div className="flex items-center gap-3">
+          <span className="hidden whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.16em] text-sd-ink-dull sm:inline">
+            {data.est}
+          </span>
+          <span className="whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.16em] text-sd-accent-faint">
+            Day {data.dayNumber} of {data.totalDays}
+          </span>
+        </div>
         <button
           type="button"
           aria-haspopup="menu"
