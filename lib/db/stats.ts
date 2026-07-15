@@ -84,9 +84,39 @@ export interface StatsSummary {
   anyLogged: boolean;
 }
 
+/**
+ * A COMPACT, public-safe projection of one plan day, for the dashboard's day
+ * browser. Curated fields only (the same session facts the day page already
+ * exposes publicly) plus the three evidence flags, kept as distinct booleans so
+ * the widget can honour decision D2 / ruling D11: off-plan evidence reads as
+ * verified but never completes a planned session (verified stays false while
+ * offPlanVerified is true). No health data, no private notes.
+ */
+export interface CompactDay {
+  date: string; // 'YYYY-MM-DD'
+  weekday: string | null;
+  /** 1-based ordinal within the plan (Day n of 98), by date order. */
+  dayIndex: number;
+  /** The primary session's title, or a "Nothing planned" fallback. */
+  title: string;
+  category: SessionCategory | null;
+  distanceKm: number | null;
+  paceText: string | null;
+  rpeText: string | null;
+  /** True when >= 1 ON-PLAN (session-level) link completes a planned session. */
+  verified: boolean;
+  /** True when the day carries only OFF-PLAN (day-level) evidence: verified
+   *  volume that never completes a planned session (D2 / D11). */
+  offPlanVerified: boolean;
+  /** True when a manual session log marks the day completed. */
+  logged: boolean;
+}
+
 export interface StatsData {
   summary: StatsSummary;
   heatmap: HeatmapCell[];
+  /** Every plan day as a compact, public-safe browsing record (date order). */
+  days: CompactDay[];
 }
 
 const CATEGORY_LABELS: Record<SessionCategory, string> = {
@@ -148,6 +178,7 @@ export function computeStats(
   // --- Per-day heatmap cells + running totals ---
   const sortedDays = [...days].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const heatmap: HeatmapCell[] = [];
+  const compactDays: CompactDay[] = [];
 
   let totalPlannedKm = 0;
   let totalCompletedKm = 0;
@@ -209,6 +240,26 @@ export function computeStats(
       offPlan: completedKm > 0 && !done,
       sessionsPlanned: nonRest.length,
     });
+
+    // Compact browsing record. The primary session is the day's headline (a run,
+    // the race, or a rest marker); `verified` counts on-plan links only, so an
+    // off-plan run leaves it false while offPlanVerified reads true (D2 / D11).
+    // dayIndex is the 1-based position in date order (matches the seed's 1-based
+    // day_index without trusting a stored value that fixtures index from 0).
+    const primary = daySessions.find((s) => s.slot === 'primary') ?? null;
+    compactDays.push({
+      date: day.date,
+      weekday: day.weekday ?? null,
+      dayIndex: heatmap.length,
+      title: primary?.title ?? 'Nothing planned',
+      category: primary?.category ?? null,
+      distanceKm: primary?.distance_km ?? null,
+      paceText: primary?.pace_text ?? null,
+      rpeText: primary?.rpe_text ?? null,
+      verified: onPlan,
+      offPlanVerified: hasEvidence && !onPlan,
+      logged: log?.completed ?? false,
+    });
   }
 
   // --- Streaks over elapsed days (a non-running day never breaks the streak) ---
@@ -267,7 +318,7 @@ export function computeStats(
     anyLogged: heatmap.some((c) => c.hasLog || c.completedKm > 0),
   };
 
-  return { summary, heatmap };
+  return { summary, heatmap, days: compactDays };
 }
 
 /** Which 1-based plan week contains `date`, or 0 when it falls outside. */

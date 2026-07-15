@@ -32,6 +32,7 @@ import {
   getLatestVerifiedActivity,
   getActivityLinksForPlan,
   getStravaActivities,
+  type CompactDay,
 } from "@/lib/db";
 import {
   toActivityEvidence,
@@ -126,6 +127,13 @@ export interface DashboardData {
   wordmark: string;
   dayNumber: number;
   totalDays: number;
+  /** Today in the race timezone (YYYY-MM-DD): the day browser's default anchor. */
+  todayISO: string;
+  /** First / last plan day (browsing bounds), or null when unconfigured. */
+  planStart: string | null;
+  planEnd: string | null;
+  /** Every plan day as a compact, public-safe record for the day browser. */
+  days: CompactDay[];
   countdown: CountdownData;
   today: TodayData;
   spotlight: ActivityEvidence | null;
@@ -210,6 +218,10 @@ export async function assembleDashboard(): Promise<DashboardBundle> {
     wordmark: WORDMARK,
     dayNumber,
     totalDays,
+    todayISO: view.todayISO,
+    planStart: view.plan.start_date,
+    planEnd: view.plan.end_date,
+    days: stats.days,
     countdown: {
       daysToRace: view.race.countdown.days,
       status: view.race.countdown.status,
