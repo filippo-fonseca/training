@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { StatusPill } from '@/components/ui/status-pill';
 import type { StravaActivity, StravaConnection } from '@/lib/types/database';
 import { getConnection, getActivities, isStravaConfigured } from '@/lib/strava';
+import { isRunSport } from '@/lib/strava/match';
 import { englishTitle } from '@/lib/strava/title';
 import { DEFAULT_PLAN_SLUG } from '@/lib/db/queries';
 import { linkActivity, unlinkActivity, disconnect } from './actions';
@@ -157,8 +158,10 @@ export default async function StravaAdminPage({
 
   const { supabaseReady, configured, connection, activities, days } = await loadData();
   const dayById = new Map(days.map((d) => [d.id, d]));
-  const matched = activities.filter((a) => a.plan_day_id);
-  const unmatched = activities.filter((a) => !a.plan_day_id);
+  // Runs only (D11): the matched/unmatched lists show run-family activities.
+  const runActivities = activities.filter((a) => isRunSport(a.sport_type));
+  const matched = runActivities.filter((a) => a.plan_day_id);
+  const unmatched = runActivities.filter((a) => !a.plan_day_id);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -247,7 +250,12 @@ export default async function StravaAdminPage({
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Activities</dt>
-                    <dd className="sd-numeral text-sd-ink-dull">{activities.length}</dd>
+                    <dd className="text-sd-ink-dull">
+                      <span className="sd-numeral">{runActivities.length}</span>
+                      <span className="ml-2 text-tiny uppercase tracking-wide text-sd-ink-faint">
+                        runs only
+                      </span>
+                    </dd>
                   </div>
                   <div className="flex gap-2">
                     <dt className="w-24 sd-stat-label">Updated</dt>
