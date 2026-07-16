@@ -194,7 +194,7 @@ export interface DashboardBundle {
   recentVerified: ActivityEvidence[];
 }
 
-const MANIFESTO = "Rebuilding from injury to the Baystate Half. In public.";
+const MANIFESTO = "Rebuilding from injury to a Boston Qualifier (BQ) marathon time. In public.";
 const EST = "EST. 2026 · LOWELL, MA";
 const WORDMARK = "THE COMEBACK";
 

@@ -22,7 +22,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "The Comeback · Training Tracker",
   description:
-    "Rebuilding from injury to the Baystate Half. In public. A one-page, open-source training dashboard.",
+    "Rebuilding from injury to a Boston Qualifier (BQ) marathon time. In public. A one-page, open-source training dashboard.",
 };
 
 export const viewport: Viewport = {
