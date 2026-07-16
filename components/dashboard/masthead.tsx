@@ -38,9 +38,9 @@ export function Masthead({ data }: { data: DashboardData }) {
         </span>
       </div>
 
-      {/* Manifesto (hidden on narrow screens). ink-dull clears 7.46:1 on the
-          masthead's --sd-app field — comfortably past WCAG AA 4.5:1. */}
-      <p className="hidden min-w-0 flex-1 truncate px-4 text-center text-xs text-sd-ink-dull md:block">
+      {/* Manifesto (hidden on narrow screens). Full ink at 13px/medium for
+          legibility; sd-ink clears AAA on the masthead's --sd-app field. */}
+      <p className="hidden min-w-0 flex-1 truncate px-4 text-center text-[13px] font-medium text-sd-ink md:block">
         {data.manifesto}
       </p>
 
