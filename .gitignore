@@ -7,20 +7,23 @@
 !.bgsd/config.json
 .bgsd-tmp/
 
-# env files (open-source: never commit)
+# env files (open-source: never commit secrets)
 .env
 .env.local
 .env.*.local
+.env*
+!.env.example
+!mobile/.env.example
 
 # deps/build
 node_modules/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+mobile/.expo/
 
 # local verification artifacts
 .playwright-mcp/
 /design-full.png
 /home.png
 .vercel
-.env*
