@@ -23,12 +23,16 @@ Read the day, log the day, watch the countdown.
   session, plan import, and app settings.
 - **Public widget API**: anon-level, RLS-safe JSON endpoints for an
   external site widget (see [docs/API.md](docs/API.md)).
+- **Expo mobile app**: React Native companion in [`mobile/`](mobile/) with
+  Admin as a permanent tab, Strava OAuth via `/api/mobile/strava/*`, and
+  TestFlight-ready EAS config.
 
 ## Stack
 
 - [Next.js 15](https://nextjs.org) (App Router) + React 19 + TypeScript
 - [Supabase](https://supabase.com) (Postgres, auth, row-level security)
 - [Tailwind CSS 4](https://tailwindcss.com)
+- [Expo](https://expo.dev) (React Native) companion in `mobile/`
 - Deployed on [Vercel](https://vercel.com), with Vercel Cron for the
   scheduled Strava sync
 
@@ -52,6 +56,8 @@ owner account, wiring Strava, and deploying to Vercel with cron), see
 - [docs/API.md](docs/API.md): the public widget API (read-only, anon-safe).
 - [docs/strava.md](docs/strava.md): Strava integration details: OAuth flow,
   sync watermark, and matching rules.
+- [docs/mobile.md](docs/mobile.md): Expo companion app + `/api/mobile/*` bridge.
+- [mobile/README.md](mobile/README.md): run / TestFlight the React Native app.
 
 ## Security model
 

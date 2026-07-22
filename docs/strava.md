@@ -106,3 +106,12 @@ budget, so the photo strategy is deliberate:
 session-evidence derivation: cumulative totals and evidence-over-log precedence)
 with mocked inputs: no network or DB. Live-verify the full OAuth + sync path once
 real Strava credentials are configured.
+
+## Mobile (Expo)
+
+The Expo app starts OAuth through `GET /api/mobile/strava/authorize` with the
+owner's Supabase Bearer token. State is HMAC-signed (no cookies). Strava
+redirects to `/api/mobile/strava/callback`, which exchanges the code, stores
+tokens with the service-role client, and deep-links to `comeback://strava`.
+Sync and auto-link from the app hit `/api/mobile/strava/sync` and
+`/api/mobile/strava/auto-link` (same engines as the web admin actions).
