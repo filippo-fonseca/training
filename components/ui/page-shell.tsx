@@ -8,10 +8,16 @@ import { BoldAmbient } from "@/components/ui/bold-ambient";
  * the left, an .sd-topbar-blur toolbar, an --sd-app canvas content area, and a
  * whisper ambient glow fixed behind the whole shell. Bold ambient belongs to
  * hero/dashboard content, not the shell.
+ *
+ * Below md the sidebar is hidden; pass `mobileNav` for a sticky horizontal
+ * rail under the topbar so admin (and any other shell consumer) stays usable
+ * on phones.
  */
 export interface PageShellProps {
   /** Sidebar content below the brand (typically a stack of <NavItem>). */
   nav?: ReactNode;
+  /** Compact horizontal nav shown below the topbar on <md viewports. */
+  mobileNav?: ReactNode;
   /** Brand lockup at the top of the sidebar. */
   brand?: ReactNode;
   /** Toolbar content (breadcrumbs, actions). */
@@ -22,6 +28,7 @@ export interface PageShellProps {
 
 export function PageShell({
   nav,
+  mobileNav,
   brand,
   topbar,
   children,
@@ -45,10 +52,18 @@ export function PageShell({
 
         {/* Main column */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sd-topbar-blur sticky top-0 z-20 flex h-14 items-center gap-3 px-5">
+          <header className="sd-topbar-blur sticky top-0 z-20 flex h-14 items-center gap-3 px-4 sm:px-5">
             {topbar}
           </header>
-          <main className="min-w-0 flex-1 px-5 py-6 lg:px-8">{children}</main>
+          {mobileNav ? (
+            <nav
+              aria-label="Admin sections"
+              className="sd-topbar-blur sticky top-14 z-20 flex gap-1 overflow-x-auto border-b border-sd-divider px-3 py-2 md:hidden"
+            >
+              {mobileNav}
+            </nav>
+          ) : null}
+          <main className="min-w-0 flex-1 px-4 py-4 sm:px-5 sm:py-6 lg:px-8">{children}</main>
         </div>
       </div>
     </div>
@@ -89,6 +104,34 @@ export function NavItem({ href, icon, children, active = false }: NavItemProps) 
         </span>
       ) : null}
       <span className="truncate">{children}</span>
+    </Link>
+  );
+}
+
+/** Compact pill used in the mobile horizontal rail. */
+export function NavRailItem({
+  href,
+  icon,
+  children,
+  active = false,
+}: NavItemProps) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "sd-press inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-sm",
+        active
+          ? "bg-sd-selected-item text-sd-accent-faint"
+          : "text-sd-ink-dull hover:bg-sd-hover hover:text-sd-ink",
+      )}
+    >
+      {icon ? (
+        <span className={cn("shrink-0", active ? "text-sd-accent" : "text-sd-ink-faint")}>
+          {icon}
+        </span>
+      ) : null}
+      <span>{children}</span>
     </Link>
   );
 }

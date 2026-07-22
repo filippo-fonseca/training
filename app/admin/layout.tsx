@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { requireOwner } from '@/lib/auth/owner';
 import { signOut } from '@/app/login/actions';
 import { PageShell } from '@/components/ui/page-shell';
-import { AdminNav } from '@/components/admin/admin-nav';
+import { AdminNav, AdminMobileNav } from '@/components/admin/admin-nav';
 
 export const metadata: Metadata = {
   title: 'Admin · Training Tracker',
@@ -56,7 +56,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const { email } = await requireOwner();
 
   return (
-    <PageShell brand={<AdminBrand />} nav={<AdminNav />} topbar={<AdminTopbar email={email} />}>
+    <PageShell
+      brand={<AdminBrand />}
+      nav={<AdminNav />}
+      mobileNav={<AdminMobileNav />}
+      topbar={<AdminTopbar email={email} />}
+    >
       {children}
     </PageShell>
   );

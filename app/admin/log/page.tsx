@@ -122,7 +122,7 @@ function DayLogRow({
 
   return (
     <div className="sd-panel sd-card-hover overflow-hidden p-0">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-sd-ink">
             <span>
@@ -135,7 +135,7 @@ function DayLogRow({
             {primary?.title ?? 'No session'} · {formatKm(primary?.distance_km ?? day.planned_run_km)}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
           <span className="flex items-center gap-1.5 text-xs text-sd-ink-faint">
             {linkedCount > 0 ? (
               <span aria-hidden className="size-1.5 rounded-full" style={{ background: 'var(--ink-sage)' }} />

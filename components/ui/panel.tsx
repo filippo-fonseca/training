@@ -24,7 +24,7 @@ export function Panel({
     <div
       className={cn(
         "sd-panel",
-        padded && "p-5",
+        padded && "p-4 sm:p-5",
         interactive && "sd-card-hover",
         className,
       )}

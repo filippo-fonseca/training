@@ -87,7 +87,7 @@ function DayHealthRow({ planId, row, isToday }: { planId: string; row: HealthDay
 
   return (
     <div className="sd-panel sd-card-hover overflow-hidden p-0">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm font-medium text-sd-ink">
             <span>
@@ -99,7 +99,7 @@ function DayHealthRow({ planId, row, isToday }: { planId: string; row: HealthDay
           <div className="truncate text-xs text-sd-ink-faint">{entry ? 'Checkpoint recorded' : 'Not recorded'}</div>
         </div>
         {entry ? (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
             <DeleteButton
               action={deleteHealthEntryAction.bind(null, day.id)}
               confirm={`Delete the health checkpoint for ${formatDate(day.date)}? This cannot be undone.`}

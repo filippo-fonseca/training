@@ -43,7 +43,11 @@ export function PageHeader({ title, description, crumbs, actions, className }: P
             <p className="mt-1 max-w-2xl text-sm text-sd-ink-dull">{description}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
+            {actions}
+          </div>
+        ) : null}
       </div>
     </header>
   );

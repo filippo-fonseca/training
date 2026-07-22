@@ -1,47 +1,46 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { NavItem } from '@/components/ui/page-shell';
-import {
-  PlanGlyph,
-  LogGlyph,
-  HeartPulseGlyph,
-  ActivityGlyph,
-  ImportGlyph,
-  GearGlyph,
-} from '@/components/admin/icons';
+import { NavItem, NavRailItem } from '@/components/ui/page-shell';
+import { ADMIN_NAV } from '@/components/admin/admin-nav-data';
 
-interface NavDef {
-  href: string;
-  label: string;
-  icon: ReactNode;
-  /** Later units own these routes; the link is present but the page may 404 until then. */
-  pending?: boolean;
+function isActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
-
-const NAV: NavDef[] = [
-  { href: '/admin/plan', label: 'Plan', icon: <PlanGlyph /> },
-  { href: '/admin/log', label: 'Log', icon: <LogGlyph /> },
-  { href: '/admin/health', label: 'Health', icon: <HeartPulseGlyph /> },
-  { href: '/admin/strava', label: 'Strava', icon: <ActivityGlyph /> },
-  { href: '/admin/import', label: 'Import', icon: <ImportGlyph /> },
-  { href: '/admin/settings', label: 'Settings', icon: <GearGlyph /> },
-];
 
 export function AdminNav() {
   const pathname = usePathname();
   return (
     <>
-      {NAV.map((item) => {
-        const active =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
-        return (
-          <NavItem key={item.href} href={item.href} icon={item.icon} active={active}>
-            {item.label}
-          </NavItem>
-        );
-      })}
+      {ADMIN_NAV.map((item) => (
+        <NavItem
+          key={item.href}
+          href={item.href}
+          icon={item.icon}
+          active={isActive(pathname, item.href)}
+        >
+          {item.label}
+        </NavItem>
+      ))}
+    </>
+  );
+}
+
+/** Horizontal rail for phones; same destinations as the sidebar. */
+export function AdminMobileNav() {
+  const pathname = usePathname();
+  return (
+    <>
+      {ADMIN_NAV.map((item) => (
+        <NavRailItem
+          key={item.href}
+          href={item.href}
+          icon={item.icon}
+          active={isActive(pathname, item.href)}
+        >
+          {item.label}
+        </NavRailItem>
+      ))}
     </>
   );
 }

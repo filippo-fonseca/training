@@ -40,7 +40,7 @@ export function EntityForm({ action, children, submitLabel = 'Save', aside, clas
   return (
     <form action={formAction} className={className} noValidate>
       {children}
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
         <SubmitButton label={submitLabel} />
         {aside}
         {state.error ? (

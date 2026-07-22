@@ -29,12 +29,12 @@ export function CrudRow({
 }: CrudRowProps) {
   return (
     <div className="sd-panel sd-card-hover overflow-hidden p-0">
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-sd-ink">{title}</div>
           {subtitle ? <div className="truncate text-xs text-sd-ink-faint">{subtitle}</div> : null}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
           {badges}
           <DeleteButton action={deleteAction} confirm={deleteConfirm} label={deleteLabel} compact />
         </div>
