@@ -267,7 +267,7 @@ export default async function StravaAdminPage({
                   </div>
                 </dl>
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
                 <SyncNowButton />
                 <AutoLinkButton />
                 <div className="flex items-center gap-2">
@@ -303,13 +303,13 @@ export default async function StravaAdminPage({
                         <p className="truncate text-sm text-sd-ink">{englishTitle(a.name) ?? 'Activity'}</p>
                         <ActivityMeta a={a} />
                       </div>
-                      <form action={linkActivity} className="flex items-center gap-2">
+                      <form action={linkActivity} className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
                         <input type="hidden" name="activity_id" value={a.id} />
                         <select
                           name="plan_day_id"
                           required
                           defaultValue=""
-                          className="rounded-sd-chrome border border-sd-line bg-sd-input px-2 py-1.5 text-tiny text-sd-ink transition-[border-color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--sd-accent)_28%,var(--sd-line))]"
+                          className="w-full min-w-0 rounded-sd-chrome border border-sd-line bg-sd-input px-2 py-2 text-tiny text-sd-ink transition-[border-color,box-shadow] duration-150 hover:border-[color-mix(in_srgb,var(--sd-accent)_28%,var(--sd-line))] sm:w-auto"
                         >
                           <option value="" disabled>
                             Link to day…

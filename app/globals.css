@@ -465,9 +465,9 @@
      the clicked widget's rect (transform-origin set inline). Backdrop fades in;
      panel scales + fades. Reduced-motion swaps both instantly (below). */
   .sd-overlay-backdrop {
-    background: rgb(4 5 7 / 0.66);
-    backdrop-filter: blur(3px);
-    -webkit-backdrop-filter: blur(3px);
+    background: rgb(4 5 7 / 0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     animation: sd-backdrop-in 160ms var(--ease-out-quart) forwards;
   }
   .sd-overlay-panel {
@@ -478,6 +478,12 @@
       var(--sd-glow-medium);
     animation: sd-overlay-in 200ms var(--ease-out-quart) forwards;
     will-change: transform, opacity;
+  }
+  /* Phone: sheet rises from the bottom instead of scaling from the widget. */
+  @media (max-width: 639px) {
+    .sd-overlay-panel-sheet {
+      animation-name: sd-overlay-sheet-in;
+    }
   }
 
   /* 45-degree hatched projection segment for progress bars */
@@ -553,11 +559,22 @@
 @keyframes sd-overlay-in {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: translateY(-2%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes sd-overlay-sheet-in {
+  from {
+    opacity: 0.85;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

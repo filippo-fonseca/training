@@ -10,7 +10,7 @@
  * loading the page with that hash opens the overlay on mount. All motion is CSS
  * and reduced-motion-guarded (see globals.css).
  */
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { DashboardData, OverlayKey } from "./data";
 import { OverlayDialog, type OriginRect } from "./overlay-dialog";
 import { Masthead } from "./masthead";
@@ -60,11 +60,19 @@ export function DashboardShell({ data, overlays }: Props) {
   // The spotlight switcher's selection: a verified run's strava id (null = latest).
   const latestRunId = data.spotlightVerified[0]?.stravaId ?? null;
   const [selectedRun, setSelectedRun] = useState<number | null>(latestRunId);
+  // True only when THIS shell pushed `#w=…` via history.pushState. Direct
+  // deep-links (loaded with the hash already set) must replaceState on close
+  // so history.back() does not leave the dashboard.
+  const pushedHashRef = useRef(false);
 
   // Open on load when a deep-link hash is present, and keep in sync with the
   // hash on manual edits / history navigation.
   useEffect(() => {
-    const sync = () => setActive(keyFromHash(window.location.hash));
+    const sync = () => {
+      const key = keyFromHash(window.location.hash);
+      setActive(key);
+      if (!key) pushedHashRef.current = false;
+    };
     sync();
     window.addEventListener("hashchange", sync);
     window.addEventListener("popstate", sync);
@@ -79,13 +87,25 @@ export function DashboardShell({ data, overlays }: Props) {
     setActive(key);
     if (window.location.hash !== `#w=${key}`) {
       window.history.pushState(null, "", `#w=${key}`);
+      pushedHashRef.current = true;
     }
   }, []);
 
   const close = useCallback(() => {
     if (/^#w=/.test(window.location.hash)) {
-      // Pop the pushed hash entry; the popstate listener clears `active`.
-      window.history.back();
+      if (pushedHashRef.current) {
+        // Pop the entry we pushed; the popstate listener clears `active`.
+        pushedHashRef.current = false;
+        window.history.back();
+      } else {
+        // Landed with the hash already set: clear it without leaving the page.
+        window.history.replaceState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}`,
+        );
+        setActive(null);
+      }
     } else {
       setActive(null);
     }

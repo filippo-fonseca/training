@@ -30,7 +30,7 @@ function Inner({ label, compact }: { label: string; compact: boolean }) {
         'sd-press inline-flex items-center gap-1.5 rounded-sd-chrome border border-sd-line bg-sd-box text-sd-ink-faint',
         'hover:border-[color-mix(in_srgb,var(--ink-coral)_40%,var(--sd-line))] hover:bg-[color-mix(in_srgb,var(--ink-coral)_12%,var(--sd-box))] hover:text-[var(--ink-coral)]',
         'disabled:opacity-50',
-        compact ? 'p-1.5' : 'px-3 py-1.5 text-tiny font-semibold uppercase tracking-wider',
+        compact ? 'min-h-11 min-w-11 justify-center p-2.5' : 'px-3 py-1.5 text-tiny font-semibold uppercase tracking-wider',
       )}
     >
       <TrashGlyph width={14} height={14} />

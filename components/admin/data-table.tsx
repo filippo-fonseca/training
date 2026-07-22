@@ -39,7 +39,8 @@ export function DataTable<T>({
 
   return (
     <div className={cn('sd-panel overflow-hidden p-0', className)}>
-      <table className="w-full border-collapse text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full min-w-max border-collapse text-sm">
         <thead>
           <tr className="border-b border-sd-divider">
             {columns.map((c) => (
@@ -88,6 +89,7 @@ export function DataTable<T>({
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

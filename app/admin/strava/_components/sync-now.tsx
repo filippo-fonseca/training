@@ -24,7 +24,7 @@ function Submit() {
 export function SyncNowButton() {
   const [state, formAction] = useActionState<SyncResult | null, FormData>(syncNowAction, null);
   return (
-    <form action={formAction} className="flex items-center gap-3">
+    <form action={formAction} className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
       <Submit />
       {state ? (
         <span className="sd-enter text-xs text-sd-ink-faint" role="status">
