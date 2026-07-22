@@ -126,7 +126,7 @@ export function OverlayDialog({
 
   return (
     <div
-      className="sd-overlay-root fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="sd-overlay-root fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1rem,env(safe-area-inset-bottom,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:p-6 sm:pt-[max(1.5rem,env(safe-area-inset-top,0px))] sm:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]"
       onKeyDown={onKeyDown}
     >
       {/* Backdrop: click to close. */}
@@ -143,21 +143,25 @@ export function OverlayDialog({
         aria-modal="true"
         aria-labelledby={labelledById}
         tabIndex={-1}
-        className="sd-overlay-panel sd-panel relative flex max-h-[84vh] w-[min(920px,92vw)] flex-col overflow-hidden outline-none"
+        className="sd-overlay-panel sd-panel relative flex max-h-[min(84dvh,84vh)] w-[min(920px,92vw)] flex-col overflow-hidden outline-none"
       >
-        {/* Sticky close affordance. */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close overlay"
-          className="sd-press absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-full border border-sd-line bg-sd-box/80 text-sd-ink-dull backdrop-blur hover:border-sd-selected hover:text-sd-ink"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Close chrome in normal flow (not absolute) so iOS hit-testing stays
+            reliable: absolute + backdrop-filter buttons near the status bar /
+            Dynamic Island often swallow taps on Safari. 44px target per HIG. */}
+        <div className="flex shrink-0 items-center justify-end px-3 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close overlay"
+            className="sd-press grid size-11 touch-manipulation place-items-center rounded-full border border-sd-line bg-sd-box text-sd-ink-dull hover:border-sd-selected hover:text-sd-ink"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         {/* Internal scroll only. */}
-        <div className="sd-overlay-scroll min-h-0 flex-1 overflow-y-auto p-5 sm:p-7">
+        <div className="sd-overlay-scroll min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-2 sm:px-7 sm:pb-7 sm:pt-3">
           {children}
         </div>
       </div>

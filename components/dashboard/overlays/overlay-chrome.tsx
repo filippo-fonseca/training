@@ -20,7 +20,7 @@ export function OverlayHeader({
   subtitle?: string;
 }) {
   return (
-    <header className="flex flex-col gap-1 pr-10">
+    <header className="flex flex-col gap-1">
       <span className="sd-stat-label">{eyebrow}</span>
       <h2
         id={titleId}
